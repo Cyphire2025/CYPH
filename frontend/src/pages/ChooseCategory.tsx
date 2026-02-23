@@ -1,7 +1,7 @@
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
-import { ArrowLeft, Laptop, GraduationCap, Heart, Calendar, Building2 } from "lucide-react";
-import { useState , useMemo } from "react";
+import { ArrowLeft, Laptop, GraduationCap, Calendar, Building2 } from "lucide-react";
+import { useState, useMemo } from "react";
 import NavbarSpon from "../components/navbarsponhome.jsx";
 import NavbarHome from "../components/navbarhome.jsx";
 import Footer from "../components/footer";
@@ -11,6 +11,7 @@ interface Category {
   desc: string;
   icon: React.ComponentType<{ className?: string }>;
   link: string;
+  colorClass: string;
   gradient: string;
   isActive: boolean;
 }
@@ -21,7 +22,8 @@ const categories: Category[] = [
     desc: "From software to AI solutions, build the future with experts.",
     icon: Laptop,
     link: "/posttask-tech",
-    gradient: "linear-gradient(135deg, hsl(326, 78%, 60%), hsl(266, 83%, 67%), hsl(198, 93%, 60%))",
+    colorClass: "text-blue-600 bg-blue-50 border-blue-100 group-hover:bg-blue-600 group-hover:text-white",
+    gradient: "from-blue-500 to-indigo-600",
     isActive: true,
   },
   {
@@ -29,23 +31,26 @@ const categories: Category[] = [
     desc: "Tutors, e-learning content, and academic support on demand.",
     icon: GraduationCap,
     link: "/posttask-education",
-    gradient: "linear-gradient(135deg, hsl(198, 93%, 60%), hsl(326, 78%, 60%), hsl(266, 83%, 67%))",
+    colorClass: "text-purple-600 bg-purple-50 border-purple-100 group-hover:bg-purple-600 group-hover:text-white",
+    gradient: "from-purple-500 to-fuchsia-600",
     isActive: true,
   },
-  {
-    name: "Healthcare",
-    desc: "Medical writers, telehealth assistants, and research support.",
-    icon: Heart,
-    link: "#",
-    gradient: "linear-gradient(135deg, hsl(266, 83%, 67%), hsl(198, 93%, 60%), hsl(326, 78%, 60%))",
-    isActive: false,
-  },
+  // {
+  //   name: "Healthcare",
+  //   desc: "Medical writers, telehealth assistants, and research support.",
+  //   icon: Heart,
+  //   link: "#",
+  //   colorClass: "text-rose-600 bg-rose-50 border-rose-100 group-hover:bg-rose-600 group-hover:text-white",
+  //   gradient: "from-rose-500 to-pink-600",
+  //   isActive: false,
+  // },
   {
     name: "Event Management",
     desc: "Organizers, planners, and designers to make your events shine.",
     icon: Calendar,
     link: "/posttask-event",
-    gradient: "linear-gradient(135deg, hsl(326, 78%, 60%), hsl(198, 93%, 60%))",
+    colorClass: "text-amber-600 bg-amber-50 border-amber-100 group-hover:bg-amber-600 group-hover:text-white",
+    gradient: "from-amber-500 to-orange-600",
     isActive: true,
   },
   {
@@ -53,7 +58,8 @@ const categories: Category[] = [
     desc: "3D designs, CAD models, and urban planning tasks made simple.",
     icon: Building2,
     link: "/posttask-architecture",
-    gradient: "linear-gradient(135deg, hsl(198, 93%, 60%), hsl(266, 83%, 67%))",
+    colorClass: "text-slate-600 bg-slate-50 border-slate-200 group-hover:bg-slate-800 group-hover:text-white",
+    gradient: "from-slate-600 to-gray-700",
     isActive: true,
   },
 ];
@@ -84,9 +90,9 @@ const itemVariants: Variants = {
 
 export default function ChooseCategory() {
   const Nav = useMemo(() => {
-  const last = sessionStorage.getItem("lastHomeRoute");
-  return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
-}, []);
+    const last = sessionStorage.getItem("lastHomeRoute");
+    return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
+  }, []);
 
   const navigate = useNavigate();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -98,112 +104,40 @@ export default function ChooseCategory() {
   };
 
   return (
-    <div 
-      className="min-h-screen text-foreground flex flex-col relative overflow-hidden"
-      style={{
-        background: "linear-gradient(to bottom, #0a0a0f, #0c0c14, #000000)",
-        color: "hsl(0, 0%, 98%)",
-      }}
-    >
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-slate-50 text-slate-900 font-sans">
+      <Nav />
 
-      <Nav/>
-      {/* Ambient Background Glows */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ opacity: [1, 0.6, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            position: "absolute",
-            top: "-40rem",
-            left: "-20rem",
-            width: "60rem",
-            height: "60rem",
-            background: "radial-gradient(circle at top, hsla(326, 78%, 60%, 0.15), transparent 70%)",
-          }}
-        />
-        <motion.div 
-          animate={{ opacity: [1, 0.6, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          style={{
-            position: "absolute",
-            bottom: "-40rem",
-            right: "-20rem",
-            width: "60rem",
-            height: "60rem",
-            background: "radial-gradient(circle at bottom, hsla(198, 93%, 60%, 0.12), transparent 70%)",
-          }}
-        />
-      </div>
-
-      {/* Grain Texture Overlay for Depth */}
-      <div 
-        className="absolute inset-0 -z-10 mix-blend-soft-light" 
-        style={{
-          opacity: 0.015,
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E\")"
-        }}
-      />
+      {/* Subtle background flair */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/40 via-slate-50 to-slate-50 pointer-events-none" />
 
       <main className="flex-1 relative z-10">
         {/* Header with Back Button */}
-        <motion.header 
-          initial={{ opacity: 0, y: -20 }}
+        <motion.header
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="px-6 pt-8 pb-4 max-w-7xl mx-auto w-full"
         >
           <button
             onClick={() => navigate("/home")}
-            className="group relative inline-flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300"
-            style={{
-              background: "hsla(240, 8%, 6%, 0.4)",
-              backdropFilter: "blur(24px) saturate(180%)",
-              border: "1px solid hsla(0, 0%, 100%, 0.12)",
-              color: "hsla(0, 0%, 98%, 0.7)",
-            }}
-            aria-label="Go back to home"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "hsl(0, 0%, 98%)";
-              e.currentTarget.style.boxShadow = "0 0 20px rgba(236, 72, 153, 0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "hsla(0, 0%, 98%, 0.7)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
+            className="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:text-slate-900 hover:shadow-sm transition-all"
           >
-            <span 
-              className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300"
-              style={{
-                background: "linear-gradient(to right, hsla(326, 78%, 60%, 0.1), hsla(266, 83%, 67%, 0.1), hsla(198, 93%, 60%, 0.1))",
-              }}
-            />
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            Back to Home
           </button>
         </motion.header>
 
         {/* Hero Section */}
         <section className="relative z-10 mx-auto max-w-5xl px-6 py-16 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
-              Choose Your{" "}
-              <span 
-                style={{
-                  background: "linear-gradient(to right, hsl(326, 78%, 60%), hsl(198, 93%, 60%))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                Category
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-slate-900">
+              Choose Your <span className="text-blue-600">Category</span>
             </h1>
-            <p 
-              className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
-              style={{ color: "hsl(240, 5%, 64.9%)" }}
-            >
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
               Select the category that best matches your task. We'll connect you with the right experts faster.
             </p>
           </motion.div>
@@ -215,9 +149,9 @@ export default function ChooseCategory() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6"
+            className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 mb-6 max-w-4xl mx-auto"
           >
-            {categories.slice(0, 3).map((category, index) => (
+            {categories.slice(0, 2).map((category, index) => (
               <CategoryCard
                 key={category.name}
                 category={category}
@@ -235,12 +169,12 @@ export default function ChooseCategory() {
             animate="visible"
             className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto"
           >
-            {categories.slice(3, 5).map((category, index) => (
+            {categories.slice(2, 4).map((category, index) => (
               <CategoryCard
                 key={category.name}
                 category={category}
-                index={index + 3}
-                isHovered={hoveredIndex === index + 3}
+                index={index + 2}
+                isHovered={hoveredIndex === index + 2}
                 onHover={setHoveredIndex}
                 onClick={handleCategoryClick}
               />
@@ -248,7 +182,7 @@ export default function ChooseCategory() {
           </motion.div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );
@@ -264,109 +198,44 @@ interface CategoryCardProps {
 
 function CategoryCard({ category, index, isHovered, onHover, onClick }: CategoryCardProps) {
   const Icon = category.icon;
-  const [isHovering, setIsHovering] = useState(false);
-  
+
   return (
     <motion.article
       variants={itemVariants}
-      whileHover={{ scale: 1.03, y: -8 }}
+      whileHover={{ scale: 1.02, y: -4 }}
       whileTap={{ scale: 0.98 }}
-      onHoverStart={() => {
-        onHover(index);
-        setIsHovering(true);
-      }}
-      onHoverEnd={() => {
-        onHover(null);
-        setIsHovering(false);
-      }}
+      onHoverStart={() => onHover(index)}
+      onHoverEnd={() => onHover(null)}
       onClick={() => onClick(category)}
-      className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
-        category.isActive ? '' : 'opacity-60 cursor-not-allowed'
-      }`}
-      style={{
-        background: "hsla(240, 8%, 6%, 0.4)",
-        backdropFilter: "blur(24px) saturate(180%)",
-        border: "1px solid hsla(0, 0%, 100%, 0.12)",
-        boxShadow: isHovered && category.isActive ? "0 20px 60px -15px rgba(236, 72, 153, 0.4)" : "none",
-      }}
+      className={`group relative rounded-xl border p-8 flex flex-col items-center text-center cursor-pointer transition-all duration-300 bg-white shadow-sm ${category.isActive
+        ? 'border-slate-200 hover:border-blue-200 hover:shadow-lg'
+        : 'border-slate-100 opacity-60 cursor-not-allowed grayscale'
+        }`}
       tabIndex={0}
       role="button"
-      aria-label={`Select ${category.name} category`}
       aria-disabled={!category.isActive}
-      onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && category.isActive) {
-          e.preventDefault();
-          onClick(category);
-        }
-      }}
     >
-      {/* Gradient Border Effect */}
-      <div 
-        className="absolute inset-0 rounded-2xl opacity-0 blur-xl transition-opacity duration-500"
-        style={{
-          background: category.gradient,
-          opacity: isHovering && category.isActive ? 0.2 : 0,
-        }}
-      />
-      
-      {/* Card Content */}
-      <div className="relative p-8 flex flex-col items-center text-center h-full min-h-[280px]">
-        {/* Icon Container */}
-        <motion.div
-          animate={isHovered && category.isActive ? { y: [0, -8, 0] } : { y: 0 }}
-          transition={{ duration: 2, repeat: isHovered ? Infinity : 0, ease: "easeInOut" }}
-          className="mb-6 p-5 rounded-2xl shadow-lg transition-shadow duration-500"
-          style={{
-            background: category.gradient,
-            boxShadow: isHovering ? "0 20px 40px -10px rgba(0, 0, 0, 0.5)" : "0 10px 20px -5px rgba(0, 0, 0, 0.3)",
-          }}
-        >
-          <Icon className="w-10 h-10 text-white" />
-        </motion.div>
 
-        {/* Text Content */}
-        <h3 
-          className="text-2xl font-semibold mb-3 transition-all duration-300"
-          style={{
-            color: isHovering ? "transparent" : "hsl(0, 0%, 98%)",
-            background: isHovering ? "linear-gradient(to right, hsl(326, 78%, 60%), hsl(198, 93%, 60%))" : "none",
-            WebkitBackgroundClip: isHovering ? "text" : "unset",
-            WebkitTextFillColor: isHovering ? "transparent" : "unset",
-            backgroundClip: isHovering ? "text" : "unset",
-          }}
-        >
-          {category.name}
-        </h3>
-        <p 
-          className="text-sm leading-relaxed flex-1"
-          style={{ color: "hsl(240, 5%, 64.9%)" }}
-        >
-          {category.desc}
-        </p>
-
-        {/* Status Badge */}
-        {!category.isActive && (
-          <div 
-            className="mt-4 px-3 py-1 rounded-full text-xs"
-            style={{
-              background: "hsla(240, 5%, 15%, 0.5)",
-              color: "hsl(240, 5%, 64.9%)",
-            }}
-          >
-            Coming Soon
-          </div>
-        )}
+      {/* Icon Container */}
+      <div
+        className={`mb-6 p-4 rounded-full border transition-colors duration-300 ${category.colorClass}`}
+      >
+        <Icon className="w-8 h-8" />
       </div>
 
-      {/* Shine Effect on Hover */}
-      {category.isActive && (
-        <div 
-          className="absolute inset-0 rounded-2xl transition-transform duration-1000 ease-in-out"
-          style={{
-            background: "linear-gradient(to right, transparent, hsla(255, 255, 255, 0.05), transparent)",
-            transform: isHovering ? "translateX(100%)" : "translateX(-100%)",
-          }}
-        />
+      {/* Text Content */}
+      <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-blue-600 transition-colors">
+        {category.name}
+      </h3>
+      <p className="text-sm text-slate-600 leading-relaxed max-w-xs">
+        {category.desc}
+      </p>
+
+      {/* Status Badge */}
+      {!category.isActive && (
+        <div className="absolute top-4 right-4 px-2 py-1 bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+          Coming Soon
+        </div>
       )}
     </motion.article>
   );

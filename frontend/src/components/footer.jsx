@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 // Gradient text helper (optional, for brand name styling)
 const GradientText = ({ children }) => (
-  <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+  <span className="text-blue-600 font-bold tracking-tight">
     {children}
   </span>
 );
@@ -16,58 +16,59 @@ export default function Footer() {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
-      className="mx-auto mt-10 max-w-7xl px-6 pb-12 pt-10 text-sm text-white/60"
+      className="mx-auto mt-10 max-w-7xl px-6 pb-12 pt-10 text-sm text-gray-500"
     >
       <div className="grid gap-8 md:grid-cols-4">
         {/* Brand */}
         <div>
-          <div className="text-lg font-semibold text-white">
+          <div className="text-lg font-semibold text-slate-900">
             <GradientText>Cyphire</GradientText>
           </div>
-          <p className="mt-2 max-w-xs text-white/60">
-            A secure, outcome-driven marketplace for modern teams and expert
-            executors.
+          <p className="mt-4 text-sm text-slate-600 leading-relaxed">
+            The operating system for high-trust freelance work.
+            Escrow-protected workflows, automated contracts, and
+            instant payouts for the modern workforce.
           </p>
         </div>
 
         {/* Product */}
         <div>
-          <div className="mb-2 font-medium text-white">Product</div>
+          <div className="mb-2 font-medium text-slate-900">Product</div>
           <ul className="space-y-1">
-            <li className="hover:text-purple-400 transition-colors">How it works</li>
-            <li className="hover:text-purple-400 transition-colors">Pricing</li>
-            <li className="hover:text-purple-400 transition-colors">Escrow</li>
-            <li className="hover:text-purple-400 transition-colors">Templates</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">How it works</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Pricing</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Escrow</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Templates</li>
           </ul>
         </div>
 
         {/* Company */}
         <div>
-          <div className="mb-2 font-medium text-white">Company</div>
+          <div className="mb-2 font-medium text-slate-900">Company</div>
           <ul className="space-y-1">
-            <li className="hover:text-purple-400 transition-colors">About</li>
-            <li className="hover:text-purple-400 transition-colors">Careers</li>
-            <li className="hover:text-purple-400 transition-colors">Press Kit</li>
-            <li className="hover:text-purple-400 transition-colors">Contact</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">About</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Careers</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Press Kit</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Contact</li>
           </ul>
         </div>
 
         {/* Legal */}
         <div>
-          <div className="mb-2 font-medium text-white">Legal</div>
+          <div className="mb-2 font-medium text-slate-900">Legal</div>
           <ul className="space-y-1">
-            <li className="hover:text-purple-400 transition-colors">Terms</li>
-            <li className="hover:text-purple-400 transition-colors">Privacy</li>
-            <li className="hover:text-purple-400 transition-colors">Security</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Terms</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Privacy</li>
+            <li className="hover:text-blue-600 transition-colors cursor-pointer">Security</li>
           </ul>
         </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="mt-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-t border-white/10 pt-6">
+      <div className="mt-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-t border-slate-200 pt-6">
         <div>© {new Date().getFullYear()} Cyphire. All rights reserved.</div>
-        <div className="inline-flex items-center gap-2 text-white/50">
-          <Star className="h-4 w-4" /> Built with care
+        <div className="inline-flex items-center gap-2 text-slate-500">
+          <Star className="h-4 w-4 text-blue-500" /> Built with care
         </div>
       </div>
     </motion.footer>

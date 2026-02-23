@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import  bgImage from "../assets/bg.jpg"; 
+import bgImage from "../assets/bg.jpg";
 import { apiFetch } from "../lib/fetch";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
@@ -35,8 +35,6 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Login failed");
-
-      localStorage.setItem("admin-token", data.token);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Something went wrong");

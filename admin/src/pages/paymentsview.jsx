@@ -17,10 +17,7 @@ export default function PaymentsView() {
   // Fetch payment logs
   const fetchPayments = async () => {
     try {
-      const token = localStorage.getItem("admin-token");
-      const res = await fetch(`${API_BASE}/api/admin/payments`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`${API_BASE}/api/admin/payments`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch payments");
       setPayments(data);
@@ -35,13 +32,8 @@ export default function PaymentsView() {
 
   const handleMarkPaid = async (id, paid) => {
     try {
-      const token = localStorage.getItem("admin-token");
       const res = await apiFetch(`${API_BASE}/api/admin/payments/${id}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ paid }),
       });
 

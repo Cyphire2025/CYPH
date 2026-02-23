@@ -2,15 +2,29 @@
 import React, { useEffect, useState } from "react";
 import { FiSearch, FiMessageSquare, FiSettings, FiChevronDown, FiMenu, FiX, FiHome, FiUser, FiBriefcase } from "react-icons/fi";
 import { FaRegBell } from "react-icons/fa";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { apiFetch } from "../lib/fetch";
 
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
+const clearLegacyClientAuth = () => {
+  const keys = ["token", "userId", "userName", "userEmail", "loginTime"];
+  for (const key of keys) {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      // ignore storage failures
+    }
+  }
+};
+
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [msgOpen, setMsgOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -30,7 +44,7 @@ export default function Navbar() {
 
 
   const GradientText = ({ children }) => (
-    <span className="bg-gradient-to-r from-purple-300 via-pink-300 to-pink-400 bg-clip-text text-transparent">
+    <span className="text-blue-600 font-bold tracking-tight">
       {children}
     </span>
   );
@@ -60,8 +74,7 @@ export default function Navbar() {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/notifications`, {
-        credentials: "include",
+      const res = await apiFetch(`${API_BASE}/api/auth/notifications`, {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
       });
@@ -119,19 +132,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-white/10 via-white/5 to-purple-500/10 backdrop-blur-2xl" />
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 40%, rgba(133, 42, 218, 0.08) 100%)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(255,255,255,0.15)",
-          boxShadow:
-            "0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(255,255,255,0.1)",
-        }}
-      />
+      <div className="absolute inset-0 z-0 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm" />
 
       <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between max-w-screen-2xl mx-auto">
         <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-grow">
@@ -149,12 +150,12 @@ export default function Navbar() {
           </h1>
 
           {/* searchbar */}
-          <div className="hidden md:flex items-center bg-white/10 rounded-full px-3 sm:px-4 py-2 w-full max-w-xs lg:max-w-lg focus-within:ring-2 focus-within:ring-purple-500 transition">
-            <FiSearch className="text-gray-400 mr-2 flex-shrink-0" />
+          <div className="hidden md:flex items-center bg-slate-100 border border-slate-200 rounded-full px-3 sm:px-4 py-2 w-full max-w-xs lg:max-w-lg focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all hover:bg-white hover:shadow-sm">
+            <FiSearch className="text-slate-500 mr-2 flex-shrink-0" />
             <input
               type="text"
               placeholder="Search..."
-              className="bg-transparent outline-none text-sm text-gray-200 w-full placeholder-gray-500"
+              className="bg-transparent outline-none text-sm text-slate-800 w-full placeholder-slate-500"
             />
           </div>
         </div>
@@ -162,7 +163,7 @@ export default function Navbar() {
 
         <div className="hidden lg:flex items-center space-x-3">
           {/* About*/}
-          <div className="relative">
+          <div className="relative" onMouseLeave={() => setDiscoverOpen(false)}>
             <button
               onClick={() => {
                 setDiscoverOpen((v) => !v);
@@ -173,33 +174,35 @@ export default function Navbar() {
                 setProfileOpen(false);
                 setSponsorOpen(false)
               }}
-              className="group relative flex items-center font-medium text-gray-300 hover:text-white transition-colors duration-200"
+              className="group relative flex items-center font-medium text-slate-600 hover:text-slate-900 transition-colors duration-200"
             >
               About
               <FiChevronDown
-                className={`ml-1 transition-transform duration-200 ${discoverOpen ? "rotate-180" : ""}`}
+                className={`ml-1 transition-transform duration-200 text-slate-400 group-hover:text-slate-600 ${discoverOpen ? "rotate-180" : ""}`}
               />
             </button>
             {discoverOpen && (
-              <div className="absolute right-0 mt-3 w-52 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-20">
-                {["About Us", "Team", "Join us", "Contact"].map((t, i) => {
-                  const paths = ["/about-us", "/team", "/join-us", "/contact"];
-                  return (
-                    <Link
-                      key={i}
-                      to={paths[i]}
-                      className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 border-b last:border-b-0 border-white/10"
-                    >
-                      {t}
-                    </Link>
-                  );
-                })}
+              <div className="absolute right-0 top-full pt-3 w-52 z-20">
+                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                  {["About Us", "Team", "Join us", "Contact"].map((t, i) => {
+                    const paths = ["/about-us", "/team", "/join-us", "/contact"];
+                    return (
+                      <Link
+                        key={i}
+                        to={paths[i]}
+                        className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-b last:border-b-0 border-slate-100"
+                      >
+                        {t}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
 
           {/* Explore */}
-          <div className="relative">
+          <div className="relative" onMouseLeave={() => setSolutionsOpen(false)}>
             <button
               onClick={() => {
                 setSolutionsOpen((v) => !v);
@@ -211,29 +214,31 @@ export default function Navbar() {
                 setSponsorOpen(false)
               }}
               className={`flex items-center transition-all duration-200 font-medium ${isActive('/pricing')
-                ? 'text-white bg-white/10 px-3 py-1 rounded-lg'
-                : 'text-gray-300 hover:text-white'
+                ? 'text-blue-700 bg-blue-50 px-3 py-1 rounded-md'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               Explore
               <FiChevronDown
-                className={`ml-1 transition-transform duration-200 ${solutionsOpen ? "rotate-180" : ""}`}
+                className={`ml-1 transition-transform duration-200 text-slate-400 group-hover:text-slate-600 ${solutionsOpen ? "rotate-180" : ""}`}
               />
             </button>
             {solutionsOpen && (
-              <div className="absolute right-0 mt-3 w-56 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-20">
-                {["How It Works", "Pricing & Plans", "Escrow Policy", "Help Center"].map((t, i) => {
-                  const paths = ["/how-it-works", "/pricing", "/escrow-policy", "/help"];
-                  return (
-                    <Link
-                      key={i}
-                      to={paths[i]}
-                      className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 border-b last:border-b-0 border-white/10"
-                    >
-                      {t}
-                    </Link>
-                  );
-                })}
+              <div className="absolute right-0 top-full pt-3 w-56 z-20">
+                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                  {["How It Works", "Pricing & Plans", "Escrow Policy", "Help Center"].map((t, i) => {
+                    const paths = ["/how-it-works", "/pricing", "/escrow-policy", "/help"];
+                    return (
+                      <Link
+                        key={i}
+                        to={paths[i]}
+                        className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-b last:border-b-0 border-slate-100"
+                      >
+                        {t}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -250,23 +255,23 @@ export default function Navbar() {
                 setProfileOpen(false);
                 if (!msgOpen) fetchMessages();
               }}
-              className="text-gray-300 hover:text-white transition-all duration-200 p-2 rounded-lg hover:bg-white/10 relative"
+              className="text-slate-500 hover:text-slate-900 transition-all duration-200 p-2 rounded-md hover:bg-slate-100 relative"
               aria-label="Messages"
             >
               <FiMessageSquare size={20} />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-fuchsia-400 ring-2 ring-black/70" />
+                <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-white" />
               )}
             </button>
 
             {msgOpen && (
-              <div className="absolute right-0 mt-3 w-80 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-white/20">
-                  <h3 className="text-sm font-semibold text-white">Messages</h3>
+              <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-50">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                  <h3 className="text-sm font-semibold text-slate-800">Messages</h3>
                 </div>
 
                 {/* Body */}
-                <div className="max-h-96 overflow-auto divide-y divide-white/10">
+                <div className="max-h-96 overflow-auto divide-y divide-gray-100">
                   {messages.length === 0 ? (
                     <div className="p-4">
                       <p className="text-sm text-gray-300 text-center">No new messages</p>
@@ -275,9 +280,9 @@ export default function Navbar() {
                     visibleMessages.map((m, i) => (
                       <div key={i} className="p-3">
                         <div className="flex items-start gap-2">
-                          {!m.read && <span className="mt-1 h-2 w-2 rounded-full bg-fuchsia-400 flex-shrink-0" />}
+                          {!m.read && <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0" />}
                           <div className="min-w-0">
-                            <div className="text-sm text-white">
+                            <div className="text-sm text-slate-700">
                               {m.message}{" "}
                               {m.link && (
                                 <button
@@ -286,14 +291,13 @@ export default function Navbar() {
                                     // mark the specific message read
                                     const idx = messages.indexOf(m);
                                     if (idx > -1) {
-                                      await fetch(`${API_BASE}/api/auth/notifications/${idx}/read`, {
+                                      await apiFetch(`${API_BASE}/api/auth/notifications/${idx}/read`, {
                                         method: "POST",
-                                        credentials: "include",
                                       }).catch(() => { });
                                     }
                                     window.location.href = m.link;
                                   }}
-                                  className="text-fuchsia-300 hover:text-fuchsia-200 underline underline-offset-2 ml-1"
+                                  className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 ml-1"
                                 >
                                   View Dashboard
                                 </button>
@@ -301,9 +305,8 @@ export default function Navbar() {
                             </div>
                             <button
                               onClick={async () => {
-                                await fetch(`${API_BASE}/api/auth/notifications/${i}`, {
+                                await apiFetch(`${API_BASE}/api/auth/notifications/${i}`, {
                                   method: "DELETE",
-                                  credentials: "include",
                                 });
                                 setMessages(prev => prev.filter((_, j) => j !== i));
                               }}
@@ -312,7 +315,7 @@ export default function Navbar() {
                               Delete
                             </button>
                             {!!m.createdAt && (
-                              <div className="mt-1 text-[10px] text-white/40">
+                              <div className="mt-1 text-[10px] text-gray-400">
                                 {new Date(m.createdAt).toLocaleString()}
                               </div>
                             )}
@@ -324,10 +327,10 @@ export default function Navbar() {
                 </div>
 
                 {/* Footer: View all / Show less */}
-                <div className="p-3 border-t border-white/20">
+                <div className="p-3 border-t border-gray-100">
                   {messages.length > 1 ? (
                     <button
-                      className="w-full text-xs text-purple-300 hover:text-purple-200"
+                      className="w-full text-xs text-emerald-600 hover:text-emerald-700 font-medium"
                       onClick={() => setShowAllMsgs((v) => !v)}
                     >
                       {showAllMsgs ? "Show less" : "View all messages"}
@@ -342,7 +345,7 @@ export default function Navbar() {
 
           </div>
 
-          {/* Notifications (unchanged placeholder) */}
+          {/* Notifications */}
           <div className="relative">
             <button
               onClick={() => {
@@ -353,18 +356,18 @@ export default function Navbar() {
                 setSolutionsOpen(false);
                 setProfileOpen(false);
               }}
-              className={`text-gray-300 hover:text-white transition-all duration-200 p-2 rounded-lg hover:bg-white/10 relative ${notifOpen ? 'bg-white/10 text-white' : ''
+              className={`text-slate-500 hover:text-slate-900 transition-all duration-200 p-2 rounded-md hover:bg-slate-100 relative ${notifOpen ? 'bg-blue-50 text-blue-700' : ''
                 }`}
             >
               <FaRegBell size={20} />
             </button>
             {notifOpen && (
-              <div className="absolute right-0 mt-3 w-64 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-20">
-                <div className="px-4 py-3 border-b border-white/20">
-                  <h3 className="text-sm font-semibold text-white">Notifications</h3>
+              <div className="absolute right-0 mt-3 w-72 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-20">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                  <h3 className="text-sm font-semibold text-slate-800">Notifications</h3>
                 </div>
-                <div className="p-4">
-                  <p className="text-sm text-gray-300 text-center">No new notifications</p>
+                <div className="p-8 text-center">
+                  <p className="text-sm text-slate-500">No new notifications</p>
                 </div>
               </div>
             )}
@@ -381,95 +384,57 @@ export default function Navbar() {
                 setSolutionsOpen(false);
                 setProfileOpen(false);
               }}
-              className="text-gray-300 hover:text-white transition-all duration-200 p-2 rounded-lg hover:bg-white/10"
+              className="text-slate-500 hover:text-slate-900 transition-all duration-200 p-2 rounded-md hover:bg-slate-100"
             >
               <FiSettings size={20} />
             </button>
             {settingsOpen && (
-              <div className="absolute right-0 mt-3 w-48 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-20">
-                <a className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 border-b border-white/10 cursor-pointer">
+              <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-20">
+                <a className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-b border-slate-100 cursor-pointer">
                   Preferences
                 </a>
-                <a className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 border-b border-white/10 cursor-pointer">
+                <a className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-b border-slate-100 cursor-pointer">
                   Account
                 </a>
-                <a className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 cursor-pointer">
+                <a className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 cursor-pointer">
                   Help & Support
                 </a>
               </div>
             )}
           </div>
           {/* Switch Mode Button (drop-in replacement) */}
+          {/* Switch Mode Button (Sponsorship Mode) */}
           <motion.button
             type="button"
-            whileHover={{ scale: 1.035, y: -1 }}
-            whileTap={{ scale: 0.985 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
-              try { sessionStorage.setItem("lastHomeRoute", "/sponsorshiphome"); } catch { }
-              window.location.href = "/sponsorshiphome";
+              try { sessionStorage.setItem("lastHomeRoute", "/home"); } catch { }
+              navigate("/sponsorshiphome");
             }}
-            className="relative group inline-flex items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold tracking-wide text-white transition-[transform,shadow,background,opacity] duration-300
-             bg-gradient-to-r from-violet-600 via-fuchsia-600 to-sky-600 shadow-[0_12px_30px_-10px_rgba(236,72,153,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60"
+            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-md px-4 py-2 text-sm font-medium text-white transition-all duration-300 bg-slate-800 hover:bg-slate-900 shadow-sm hover:shadow-md"
           >
-            {/* Outer glow halo */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500/25 via-fuchsia-500/20 to-sky-500/25 blur-2xl opacity-70 group-hover:opacity-90 transition-opacity"
-            />
-
-            {/* Soft inner glass */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-[1px] rounded-[0.70rem] bg-white/[0.06] backdrop-blur-xl"
-            />
-
-            {/* Animated sheen */}
-            <motion.span
-              aria-hidden="true"
-              initial={{ x: "-120%" }}
-              whileHover={{ x: "120%" }}
-              transition={{ duration: 0.9, ease: "easeOut" }}
-              className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12 bg-gradient-to-r from-white/5 via-white/25 to-white/5"
-            />
-
-            {/* Breathing border ring */}
-            <motion.span
-              aria-hidden="true"
-              animate={{ opacity: [0.35, 0.6, 0.35] }}
-              transition={{ duration: 2.4, repeat: Infinity }}
-              className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/10"
-            />
-
-            {/* Content */}
             <span className="relative z-10 flex items-center gap-2">
               <motion.svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
-                className="h-4 w-4"
+                className="h-4 w-4 text-sky-400"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                whileHover={{ x: 2 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <path d="M4 12h16M12 4l8 8-8 8" />
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </motion.svg>
-              <span className="text-[13px]">Sponsorship Mode</span>
+              <span>Sponsorship Mode</span>
             </span>
-
-            {/* Hover glow edge */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-8 left-1/2 h-16 w-[120%] -translate-x-1/2 rounded-[100%] bg-gradient-to-r from-fuchsia-500/20 via-pink-500/15 to-sky-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"
-            />
           </motion.button>
 
 
           {/* Dashboard button */}
           <button
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-4 py-1.5 rounded-xl text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+            className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-md text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
             onClick={() => (window.location.href = "/dashboard")}
           >
             Dashboard
@@ -486,41 +451,37 @@ export default function Navbar() {
                 setDiscoverOpen(false);
                 setSolutionsOpen(false);
               }}
-              className="flex items-center justify-center h-9 w-9 rounded-full border border-white/20 bg-white/10 overflow-hidden hover:bg-white/15 transition"
+              className="flex items-center justify-center h-9 w-9 rounded-full border border-gray-200 bg-gray-50 overflow-hidden hover:bg-gray-100 transition ring-2 ring-transparent hover:ring-emerald-200"
               aria-label="Profile"
               title={user?.name || user?.email || "Profile"}
             >
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-sm font-semibold text-white/90">{initial}</span>
+                <span className="text-sm font-semibold text-emerald-700">{initial}</span>
               )}
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 mt-3 w-44 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-20">
+              <div className="absolute right-0 mt-3 w-44 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-20">
                 <a
-                  className="block px-4 py-3 text-sm text-gray-200 hover:bg-white/20 cursor-pointer"
+                  className="block px-4 py-3 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer"
                   onClick={() => (window.location.href = "/profile")}
                 >
                   View Profile
                 </a>
                 <a
-                  className="block px-4 py-3 text-sm text-red-300 hover:bg-red-400/20 cursor-pointer"
+                  className="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
                   onClick={async () => {
                     try {
-                      await fetch(`${API_BASE}/api/auth/signout`, {
+                      await apiFetch(`${API_BASE}/api/auth/signout`, {
                         method: "POST",
-                        credentials: "include",
                       });
                     } catch {
                       // ignore
                     }
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("userId");
-                    sessionStorage.removeItem("token");
-                    sessionStorage.removeItem("userId");
-                    window.location.href = "/signin";
+                    clearLegacyClientAuth();
+                    navigate("/signin", { replace: true });
                   }}
                 >
                   Sign Out
@@ -558,13 +519,13 @@ export default function Navbar() {
 
             {/* Profile dropdown - floats below avatar */}
             {profileOpen && (
-              <div className="absolute right-0 mt-3 w-48 bg-gradient-to-br from-[#1a1a2e]/80 to-[#16213e]/80 border border-white/10 shadow-xl rounded-xl z-50 backdrop-blur-md p-2 animate-fadeIn">
+              <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 shadow-xl rounded-xl z-50 backdrop-blur-md p-2 animate-fadeIn">
                 <a
                   onClick={() => {
                     setProfileOpen(false);
                     window.location.href = "/profile";
                   }}
-                  className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded-md cursor-pointer transition"
+                  className="block px-4 py-2 text-sm text-gray-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md cursor-pointer transition"
                 >
                   👤 View Profile
                 </a>
@@ -572,20 +533,16 @@ export default function Navbar() {
                   onClick={async () => {
                     setProfileOpen(false);
                     try {
-                      await fetch(`${API_BASE}/api/auth/signout`, {
+                      await apiFetch(`${API_BASE}/api/auth/signout`, {
                         method: "POST",
-                        credentials: "include",
                       });
                     } catch {
                       console.error();
                     }
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("userId");
-                    sessionStorage.removeItem("token");
-                    sessionStorage.removeItem("userId");
-                    window.location.href = "/signin";
+                    clearLegacyClientAuth();
+                    navigate("/signin", { replace: true });
                   }}
-                  className="block px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 rounded-md cursor-pointer transition"
+                  className="block px-4 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md cursor-pointer transition"
                 >
                   🚪 Sign Out
                 </a>
@@ -596,7 +553,7 @@ export default function Navbar() {
 
           {/* Hamburger menu toggle */}
           <button
-            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition"
+            className="p-2 rounded-lg text-gray-600 hover:text-emerald-700 hover:bg-gray-100 transition"
             onClick={() => setMobileMenuOpen((v) => !v)}
           >
             {mobileMenuOpen ? <FiX size={22} /> : <FiMenu size={22} />}
@@ -612,17 +569,17 @@ export default function Navbar() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="lg:hidden absolute top-full left-0 right-0 bg-black/70 backdrop-blur-xl border-t border-white/10 shadow-2xl rounded-b-2xl"
+          className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-100 shadow-xl rounded-b-2xl"
         >
-          <div className="flex flex-col space-y-4 p-5 text-gray-200">
+          <div className="flex flex-col space-y-4 p-5 text-gray-700">
 
             {/* Search bar */}
-            <div className="flex items-center bg-gradient-to-r from-white/10 to-white/5 rounded-full px-4 py-2 shadow-inner focus-within:ring-2 focus-within:ring-cyan-400">
+            <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 shadow-inner focus-within:ring-2 focus-within:ring-emerald-500/20">
               <FiSearch className="text-gray-400 mr-2" />
               <input
                 type="text"
                 placeholder="Search..."
-                className="bg-transparent outline-none text-sm text-gray-200 w-full placeholder-gray-500"
+                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400"
               />
             </div>
             {/* About Dropdown */}
@@ -636,11 +593,11 @@ export default function Navbar() {
                   setSettingsOpen(false);
                   setProfileOpen(false);
                 }}
-                className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+                className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
               >
                 <span>About</span>
                 <FiChevronDown
-                  className={`ml-1 transition-transform duration-200 ${discoverOpen ? "rotate-180 text-cyan-400" : ""
+                  className={`ml-1 transition-transform duration-200 ${discoverOpen ? "rotate-180 text-emerald-600" : ""
                     }`}
                 />
               </button>
@@ -652,7 +609,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-2 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-lg overflow-hidden"
+                    className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden"
                   >
                     {["About Us", "Team", "Join Us", "Contact"].map((t, i) => {
                       const paths = ["/about-us", "/team", "/join-us", "/contact"];
@@ -660,7 +617,7 @@ export default function Navbar() {
                         <Link
                           key={i}
                           to={paths[i]}
-                          className="block px-5 py-3 text-sm text-gray-200 hover:bg-cyan-500/20 hover:text-white transition-colors border-b border-white/10 last:border-0"
+                          className="block px-5 py-3 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border-b border-gray-100 last:border-0"
                         >
                           {t}
                         </Link>
@@ -682,11 +639,11 @@ export default function Navbar() {
                   setSettingsOpen(false);
                   setProfileOpen(false);
                 }}
-                className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+                className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
               >
                 <span>Explore</span>
                 <FiChevronDown
-                  className={`ml-1 transition-transform duration-200 ${solutionsOpen ? "rotate-180 text-cyan-400" : ""
+                  className={`ml-1 transition-transform duration-200 ${solutionsOpen ? "rotate-180 text-emerald-600" : ""
                     }`}
                 />
               </button>
@@ -698,7 +655,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-2 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-lg overflow-hidden"
+                    className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden"
                   >
                     {["How It Works", "Pricing & Plans", "Escrow Policy", "Help Center"].map((t, i) => {
                       const paths = ["/how-it-works", "/pricing", "/escrow-policy", "/help"];
@@ -706,7 +663,7 @@ export default function Navbar() {
                         <Link
                           key={i}
                           to={paths[i]}
-                          className="block px-5 py-3 text-sm text-gray-200 hover:bg-cyan-500/20 hover:text-white transition-colors border-b border-white/10 last:border-0"
+                          className="block px-5 py-3 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border-b border-gray-100 last:border-0"
                         >
                           {t}
                         </Link>
@@ -729,11 +686,11 @@ export default function Navbar() {
                   setSettingsOpen(false);
                   setProfileOpen(false);
                 }}
-                className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+                className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
               >
                 <span>Sponsorships</span>
                 <FiChevronDown
-                  className={`ml-1 transition-transform duration-200 ${sponsorOpen ? "rotate-180 text-cyan-400" : ""}`}
+                  className={`ml-1 transition-transform duration-200 ${sponsorOpen ? "rotate-180 text-emerald-600" : ""}`}
                 />
               </button>
 
@@ -744,17 +701,17 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-2 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-lg overflow-hidden"
+                    className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden"
                   >
                     <Link
                       to="/sponsorships"
-                      className="block px-5 py-3 text-sm text-gray-200 hover:bg-cyan-500/20 hover:text-white transition-colors border-b border-white/10 last:border-0"
+                      className="block px-5 py-3 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors border-b border-gray-100 last:border-0"
                     >
                       Find Sponsors
                     </Link>
                     <Link
                       to="/List-Sponsorship"
-                      className="block px-5 py-3 text-sm text-gray-200 hover:bg-cyan-500/20 hover:text-white transition-colors"
+                      className="block px-5 py-3 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
                     >
                       List Yourself
                     </Link>
@@ -767,11 +724,11 @@ export default function Navbar() {
             {/* Messages */}
             <button
               onClick={() => setMsgOpen((v) => !v)}
-              className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
             >
               <span>Messages</span>
               {unreadCount > 0 && (
-                <span className="ml-1 text-xs text-pink-400">({unreadCount})</span>
+                <span className="ml-1 text-xs text-emerald-600">({unreadCount})</span>
               )}
             </button>
             {msgOpen && (
@@ -781,11 +738,11 @@ export default function Navbar() {
                 ) : (
                   visibleMessages.map((m, i) => (
                     <div key={i} className="py-1">
-                      <span className="text-white">{m.message}</span>
+                      <span className="text-gray-800">{m.message}</span>
                       {m.link && (
                         <button
                           onClick={() => (window.location.href = m.link)}
-                          className="text-fuchsia-300 hover:text-fuchsia-200 underline underline-offset-2 ml-1"
+                          className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2 ml-1"
                         >
                           View
                         </button>
@@ -795,7 +752,7 @@ export default function Navbar() {
                 )}
                 {messages.length > 1 && (
                   <button
-                    className="text-purple-300 hover:text-purple-200 text-xs"
+                    className="text-emerald-600 hover:text-emerald-700 text-xs"
                     onClick={() => setShowAllMsgs((v) => !v)}
                   >
                     {showAllMsgs ? "Show less" : "View all messages"}
@@ -807,7 +764,7 @@ export default function Navbar() {
             {/* Notifications */}
             <button
               onClick={() => setNotifOpen((v) => !v)}
-              className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
             >
               <span>Notifications</span>
             </button>
@@ -820,15 +777,15 @@ export default function Navbar() {
             {/* Settings */}
             <button
               onClick={() => setSettingsOpen((v) => !v)}
-              className="flex items-center justify-between w-full px-3 py-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 font-medium"
+              className="flex items-center justify-between w-full px-3 py-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 font-medium text-gray-700"
             >
               <span>Settings</span>
             </button>
             {settingsOpen && (
               <div className="pl-4 space-y-1 text-sm mt-2">
-                <a className="block hover:text-white cursor-pointer">Preferences</a>
-                <a className="block hover:text-white cursor-pointer">Account</a>
-                <a className="block hover:text-white cursor-pointer">Help & Support</a>
+                <a className="block hover:text-emerald-700 text-gray-600 cursor-pointer">Preferences</a>
+                <a className="block hover:text-emerald-700 text-gray-600 cursor-pointer">Account</a>
+                <a className="block hover:text-emerald-700 text-gray-600 cursor-pointer">Help & Support</a>
               </div>
             )}
 

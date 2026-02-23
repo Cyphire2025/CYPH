@@ -2,7 +2,7 @@
 
 import express from "express";
 import { protect, requireAdmin } from "../middlewares/authMiddleware.js";
-import { upload } from "../middlewares/uploadMiddleware.js";
+import { upload, enforceTotalSize } from "../middlewares/uploadMiddleware.js";
 import { checkPlanExpiry } from "../middlewares/checkPlanExpiry.js";
 import {
   updateMe,
@@ -49,13 +49,19 @@ router.use(protect, checkPlanExpiry);
 router.put("/me", validateBody(updateMeSchema), updateMe);
 
 // Upload avatar (single image)
-router.post("/avatar", upload.single("avatar"), updateAvatar);
+router.post("/avatar", upload.single("avatar"), enforceTotalSize, updateAvatar);
 
 // Create/replace projects metadata
 router.post("/projects", validateBody(saveProjectsSchema), saveProjects);
 
 // Upload up to 5 media files for a given project
-router.post("/projects/:index/media", upload.array("files", 5), validateBody(uploadProjectMediaSchema), uploadProjectMedia);
+router.post(
+  "/projects/:index/media",
+  upload.array("files", 5),
+  enforceTotalSize,
+  validateBody(uploadProjectMediaSchema),
+  uploadProjectMedia
+);
 
 // Edit/Delete a project by index
 router.put("/projects/:index", validateBody(updateProjectSchema), updateProject);

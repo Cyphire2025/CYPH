@@ -3,6 +3,7 @@
 import express from "express";
 import {
   loginAdmin,
+  logoutAdmin,
   getTotalUsers,
   getTotalTasks,
   listAllUsers,
@@ -22,15 +23,39 @@ import {
   toggleShowOnHelpPage,
 } from "../controllers/adminController.js"; // or helpQuestionController.js for Q&A routes
 import { adminProtect } from "../middlewares/authMiddleware.js";
+import { buildLimiter } from "../middlewares/rateLimiter.js";
+import { validateBody } from "../middlewares/validate.js";
+import { adminLoginSchema } from "../schemas/adminSchemas.js";
+import slowDown from "express-slow-down";
+import { ipKeyGenerator } from "express-rate-limit";
+import { upload } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
+const loginKey = (req) =>
+  `${ipKeyGenerator(req.ip)}:${req.headers["x-device-fingerprint"] || "dfp_na"}:admin_login`;
+
+const adminLoginLimiter = buildLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  keyGenerator: loginKey,
+  prefix: "rl:admin:login:",
+  message: { error: "Too many admin login attempts. Please try again later." },
+});
+
+const adminLoginSlowDown = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 2,
+  delayMs: (hits) => Math.min(3000, (hits - 2) * 300),
+  keyGenerator: loginKey,
+});
 
 /**
  * ADMIN ROUTES — All except /login are protected by admin JWT.
  */
 
 // --- Admin Login (returns JWT) ---
-router.post("/login", loginAdmin);
+router.post("/login", adminLoginLimiter, adminLoginSlowDown, validateBody(adminLoginSchema), loginAdmin);
+router.post("/logout", logoutAdmin);
 
 // --- Protect everything below with admin JWT ---
 router.use(adminProtect);
@@ -47,7 +72,7 @@ router.patch("/users/:id/plan", setUserPlan);
 router.get("/users", listAllUsers);
 router.get("/tickets", listAllTickets);
 router.get("/tickets/:id", getTicketByIdAdmin);
-router.post("/tickets/:id/reply", replyToTicketAdmin);
+router.post("/tickets/:id/reply", upload.array("files", 5), replyToTicketAdmin);
 
 // --- Help Center Q&A Management ---
 // Get all questions (with filters/search/pagination)

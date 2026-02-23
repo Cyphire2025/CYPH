@@ -3,7 +3,7 @@
 // Premium design: Aurora + Particles, Framer Motion, GradientText, GlassCard, NeonButton
 // Sections: Hero, Client Flow, Freelancer Flow, Comparison, FAQ, Trust, Global, CTA
 
-import React, { Suspense, useState ,useMemo } from "react";
+import React, { Suspense, useState, useMemo } from "react";
 import NavbarSpon from "../components/navbarsponhome.jsx";
 import NavbarHome from "../components/navbarhome.jsx";
 import Footer from "../components/footer";
@@ -33,10 +33,10 @@ import {
 
 /* ========== Backgrounds ========== */
 const Aurora = () => (
-  <div className="absolute inset-0 -z-10 overflow-hidden">
-    <div className="absolute -inset-x-40 -top-40 h-[50rem] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15),transparent_60%)]" />
-    <div className="absolute -inset-x-20 -top-20 h-[50rem] bg-[radial-gradient(ellipse_at_center,rgba(236,72,153,0.12),transparent_60%)]" />
-    <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.12),transparent_60%)]" />
+  <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div className="absolute -inset-x-40 -top-40 h-[50rem] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.05),transparent_60%)]" />
+    <div className="absolute -inset-x-20 -top-20 h-[50rem] bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05),transparent_60%)]" />
+    <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.05),transparent_60%)]" />
   </div>
 );
 
@@ -45,7 +45,7 @@ const Particles = () => (
     {Array.from({ length: 40 }).map((_, i) => (
       <span
         key={i}
-        className="absolute h-1 w-1 rounded-full bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.35)]"
+        className="absolute h-1 w-1 rounded-full bg-slate-300/40"
         style={{
           left: `${Math.random() * 100}%`,
           top: `${Math.random() * 100}%`,
@@ -173,12 +173,12 @@ const faqs = [
 export default function HowItWorks() {
   const [openFAQ, setOpenFAQ] = useState(null);
   const Nav = useMemo(() => {
-  const last = sessionStorage.getItem("lastHomeRoute");
-  return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
-}, []);
+    const last = sessionStorage.getItem("lastHomeRoute");
+    return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0c0c14] to-[#000] text-gray-100 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden font-sans">
       <main className="relative overflow-hidden">
         <Suspense fallback={<div className="text-center p-6">Loading...</div>}>
           <Nav />
@@ -192,13 +192,13 @@ export default function HowItWorks() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="text-4xl font-bold sm:text-5xl md:text-6xl"
+            className="text-4xl font-bold sm:text-5xl md:text-6xl text-slate-900 tracking-tight"
           >
             <GradientText>How It Works</GradientText>
           </motion.h1>
           <motion.p
             {...fadeUp(0.2)}
-            className="mx-auto mt-6 max-w-2xl text-lg text-white/70"
+            className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 leading-relaxed"
           >
             Simple, secure, and transparent — whether you’re posting a task or
             completing one, Cyphire makes collaboration effortless.
@@ -208,14 +208,14 @@ export default function HowItWorks() {
         {/* CLIENT JOURNEY */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-14">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>For Clients</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               From idea to completion — here’s your journey.
             </p>
           </header>
-          <div className="relative border-l border-white/10 pl-10 space-y-12">
+          <div className="relative border-l border-slate-200 pl-10 space-y-12">
             {clientSteps.map((step, i) => (
               <motion.div
                 key={i}
@@ -223,15 +223,15 @@ export default function HowItWorks() {
                 className="relative flex items-start"
               >
                 {/* Icon circle */}
-                <div className="absolute -left-6 top-1 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-fuchsia-300 shadow-md">
+                <div className="absolute -left-6 top-1 flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
                   {step.icon}
                 </div>
                 {/* Text */}
                 <div className="ml-8">
-                  <h3 className="text-xl font-semibold text-white">
+                  <h3 className="text-xl font-bold text-slate-900">
                     {step.title}
                   </h3>
-                  <p className="mt-2 text-white/70">{step.desc}</p>
+                  <p className="mt-2 text-slate-600 leading-relaxed">{step.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -241,10 +241,10 @@ export default function HowItWorks() {
         {/* FREELANCER JOURNEY */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-14">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>For Freelancers</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               Your path from opportunity to reward.
             </p>
           </header>
@@ -255,12 +255,12 @@ export default function HowItWorks() {
                 {...fadeUp(i * 0.2)}
                 className="h-full flex"
               >
-                <GlassCard className="p-6 flex flex-col gap-3 w-full transition hover:scale-[1.03]">
-                  <div className="text-fuchsia-200">{step.icon}</div>
-                  <h3 className="text-lg font-semibold text-white">
+                <GlassCard className="p-6 flex flex-col gap-3 w-full transition hover:scale-[1.03] hover:shadow-md border-slate-200 bg-white hover:border-blue-200">
+                  <div className="text-blue-600">{step.icon}</div>
+                  <h3 className="text-lg font-bold text-slate-900">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-white/70">{step.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{step.desc}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -270,27 +270,27 @@ export default function HowItWorks() {
         {/* COMPARISON GRID */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>At a Glance</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               How Cyphire empowers both sides of the marketplace.
             </p>
           </header>
           <div className="grid gap-8 md:grid-cols-2">
             {comparison.map((col, i) => (
               <motion.div key={i} {...fadeUp(i * 0.2)}>
-                <GlassCard className="p-8 h-full transition hover:scale-[1.02]">
-                  <h3 className="text-xl font-semibold text-white mb-4">
+                <GlassCard className="p-8 h-full transition hover:scale-[1.02] border-slate-200 bg-white shadow-md">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">
                     {col.for}
                   </h3>
                   <ul className="space-y-2">
                     {col.benefits.map((b, idx) => (
                       <li
                         key={idx}
-                        className="flex items-center gap-2 text-sm text-white/70"
+                        className="flex items-center gap-2 text-sm text-slate-600"
                       >
-                        <CheckCircle2 className="h-4 w-4 text-fuchsia-300" />
+                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
                         {b}
                       </li>
                     ))}
@@ -304,26 +304,26 @@ export default function HowItWorks() {
         {/* FAQ */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>FAQs</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               Answers to common questions about how Cyphire works.
             </p>
           </header>
           <div className="space-y-4">
             {faqs.map((f, i) => (
               <motion.div key={i} {...fadeUp(i * 0.1)}>
-                <GlassCard className="overflow-hidden">
+                <GlassCard className="overflow-hidden border-slate-200 bg-white shadow-sm hover:border-blue-200">
                   <button
-                    className="flex w-full items-center justify-between px-6 py-4 text-left text-white font-medium"
+                    className="flex w-full items-center justify-between px-6 py-4 text-left text-slate-900 font-bold"
                     onClick={() => setOpenFAQ(openFAQ === i ? null : i)}
                   >
                     {f.q}
                     {openFAQ === i ? (
-                      <ChevronUp className="h-5 w-5 text-fuchsia-300" />
+                      <ChevronUp className="h-5 w-5 text-blue-500" />
                     ) : (
-                      <ChevronDown className="h-5 w-5 text-fuchsia-300" />
+                      <ChevronDown className="h-5 w-5 text-blue-500" />
                     )}
                   </button>
                   {openFAQ === i && (
@@ -331,7 +331,7 @@ export default function HowItWorks() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       transition={{ duration: 0.3 }}
-                      className="px-6 pb-4 text-sm text-white/70"
+                      className="px-6 pb-4 text-sm text-slate-600 leading-relaxed"
                     >
                       {f.a}
                     </motion.div>
@@ -345,38 +345,38 @@ export default function HowItWorks() {
         {/* TRUST SECTION */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Why Cyphire</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               We’ve designed every detail to make collaboration seamless and safe.
             </p>
           </header>
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                icon: <ShieldCheck className="h-8 w-8 text-fuchsia-300" />,
+                icon: <ShieldCheck className="h-8 w-8 text-blue-600" />,
                 title: "Trusted Platform",
                 desc: "Built with transparency and accountability at its core.",
               },
               {
-                icon: <Clock className="h-8 w-8 text-fuchsia-300" />,
+                icon: <Clock className="h-8 w-8 text-blue-600" />,
                 title: "Time Bound",
                 desc: "Tasks run with clear deadlines to ensure progress never stalls.",
               },
               {
-                icon: <Heart className="h-8 w-8 text-fuchsia-300" />,
+                icon: <Heart className="h-8 w-8 text-blue-600" />,
                 title: "People First",
                 desc: "Everything we do is designed to empower clients and freelancers alike.",
               },
             ].map((item, i) => (
               <motion.div key={i} {...fadeUp(i * 0.2)}>
-                <GlassCard className="p-8 h-full transition hover:scale-[1.02] text-center">
+                <GlassCard className="p-8 h-full transition hover:scale-[1.02] text-center border-slate-200 bg-white shadow-md hover:shadow-lg">
                   <div className="mb-4 flex justify-center">{item.icon}</div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-sm text-white/70">{item.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -385,20 +385,20 @@ export default function HowItWorks() {
 
         {/* GLOBAL */}
         <section className="relative mx-auto max-w-6xl px-6 py-20">
-          <div className="absolute inset-0 -z-10 bg-[url('/images/about/world-map-dark.png')] bg-cover bg-center opacity-20" />
-          <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl">
-            <h2 className="text-3xl font-bold text-center">
+          <div className="absolute inset-0 -z-10 bg-[url('/images/about/world-map-dark.png')] bg-cover bg-center opacity-10" style={{ filter: 'invert(1)' }} />
+          <div className="relative rounded-3xl border border-slate-200 bg-white/50 p-8 backdrop-blur-sm shadow-sm">
+            <h2 className="text-3xl font-bold text-center text-slate-900">
               <GradientText>Global Collaboration</GradientText>
             </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-center text-white/70">
+            <p className="mt-4 max-w-2xl mx-auto text-center text-slate-600">
               Cyphire brings together individuals and companies across the world,
               unlocking talent and opportunities without borders.
             </p>
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6">
               {["India", "USA", "Europe", "Asia-Pacific"].map((region, i) => (
-                <GlassCard key={i} className="p-6 text-center">
-                  <h4 className="font-semibold text-white">{region}</h4>
-                  <p className="mt-2 text-sm text-white/70">Growing presence</p>
+                <GlassCard key={i} className="p-6 text-center border-slate-200 bg-white shadow-sm">
+                  <h4 className="font-bold text-slate-900">{region}</h4>
+                  <p className="mt-2 text-sm text-slate-500">Growing presence</p>
                 </GlassCard>
               ))}
             </div>
@@ -407,14 +407,14 @@ export default function HowItWorks() {
 
         {/* CTA */}
         <section className="relative mx-auto max-w-6xl px-6 py-20">
-          <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-sky-500/15 blur-2xl" />
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] p-8 backdrop-blur-xl md:p-12">
+          <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-sky-500/10 blur-2xl opacity-70" />
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 md:p-12 shadow-md">
             <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
               <div className="max-w-2xl">
-                <h3 className="text-2xl font-semibold text-white md:text-3xl">
+                <h3 className="text-2xl font-bold md:text-3xl text-slate-900">
                   <GradientText>Ready to Get Started?</GradientText>
                 </h3>
-                <p className="mt-3 text-white/70">
+                <p className="mt-3 text-slate-600">
                   Join Cyphire today and experience a better way to collaborate —
                   simple, transparent, and rewarding.
                 </p>

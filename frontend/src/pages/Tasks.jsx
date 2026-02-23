@@ -2,7 +2,8 @@
 // src/pages/Tasks.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/navbarsponhome";
+import NavbarSpon from "../components/navbarsponhome.jsx";
+import NavbarHome from "../components/navbarhome.jsx";
 import Footer from "../components/footer";
 import { GradientText } from "./home"; // ✅ reuse your components
 import { motion, useMotionValue, useTransform } from "framer-motion";
@@ -40,13 +41,10 @@ const inr = (n) =>
 export const NeonButton = ({ children, className = "", ...props }) => (
   <button
     {...props}
-    className={`relative inline-flex items-center gap-2 rounded-xl px-6 py-3 
-      text-sm font-semibold text-white transition-transform duration-200 
-      hover:scale-[1.03] focus:outline-none ${className}`}
+    className={`relative inline-flex items-center gap-2 rounded-md px-6 py-3 
+      text-sm font-medium text-white transition-all duration-200 
+      bg-blue-600 hover:bg-blue-700 hover:-translate-y-0.5 shadow-sm hover:shadow-md ${className}`}
   >
-    <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-sky-600" />
-    <span className="absolute -inset-[1px] rounded-xl 
-      bg-gradient-to-r from-violet-400/40 via-fuchsia-400/30 to-sky-400/30 blur-md" />
     <span className="relative inline-flex items-center gap-2">{children}</span>
   </button>
 );
@@ -74,7 +72,7 @@ export const TiltTaskCard = ({ task }) => {
 
   return (
     <motion.div
-      className="relative group rounded-2xl border border-white/10 bg-white/5 p-[1px] backdrop-blur-xl overflow-hidden"
+      className="relative group rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-blue-200 overflow-hidden"
       onMouseMove={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         const px = (e.clientX - r.left) / r.width;
@@ -89,8 +87,8 @@ export const TiltTaskCard = ({ task }) => {
         y.set(0.5);
       }}
     >
-      {/* 🔥 Banner / Logo */}
-      <div className="h-40 w-full bg-gradient-to-r from-fuchsia-600/30 via-purple-600/30 to-sky-600/30 flex items-center justify-center overflow-hidden">
+      {/* 🏙️ Banner / Logo */}
+      <div className="h-40 w-full bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden relative group-hover:bg-slate-100 transition-colors">
         {task.logo?.url ? (
           <img
             src={task.logo.url}
@@ -106,76 +104,76 @@ export const TiltTaskCard = ({ task }) => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-white/50 italic">No Logo</span>
+          <div className="flex flex-col items-center gap-2 text-slate-400">
+            <Briefcase className="h-8 w-8 opacity-20" />
+            <span className="text-xs font-medium opacity-50 uppercase tracking-widest">No Logo</span>
+          </div>
         )}
       </div>
 
-      {/* Animated border shine */}
+      {/* Animated border shine (Subtle Blue) */}
       <div className="pointer-events-none absolute -inset-24 opacity-0 group-hover:opacity-100 transition duration-500"
         style={{
           background:
-            "radial-gradient(600px circle at var(--x,50%) var(--y,50%), rgba(168,85,247,0.18), transparent 35%)",
+            "radial-gradient(600px circle at var(--x,50%) var(--y,50%), rgba(59,130,246,0.05), transparent 35%)",
         }}
       />
-      <motion.div
-
-        className="relative  bg-gradient-to-b from-white/[0.06] to-white/[0.03] p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
-      >
+      <div className="relative p-6">
         {/* Categories (max 3) */}
         {cats.length > 0 && (
           <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
             {cats.map((c, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/70"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-600 font-medium"
               >
-                <Star className="h-3.5 w-3.5" /> {c}
+                <Star className="h-3 w-3 text-slate-400" /> {c}
               </span>
             ))}
           </div>
         )}
 
         {/* Title + Desc */}
-        <h3 className="text-lg font-semibold text-white">{task.title}</h3>
-        <p className="mt-2 text-sm text-white/70 line-clamp-3">{task.description}</p>
+        <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-1">{task.title}</h3>
+        <p className="mt-2 text-sm text-slate-600 line-clamp-3 min-h-[3.75rem] leading-relaxed">{task.description}</p>
 
         {/* Price + Vacancies + Days left */}
-        <div className="mt-4 grid grid-cols-3 gap-2 text-[13px] text-white/85">
-          <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-center">
-            <div className="text-xs text-white/60">Budget</div>
-            <div className="font-medium">{inr(task.price)}</div>
+        <div className="mt-5 grid grid-cols-3 gap-2 text-[13px] text-slate-700">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-center">
+            <div className="text-xs text-slate-500 mb-0.5">Budget</div>
+            <div className="font-semibold text-slate-900">{inr(task.price)}</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-center">
-            <div className="text-xs text-white/60">Vacancies</div>
-            <div className="font-medium">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-center">
+            <div className="text-xs text-slate-500 mb-0.5">Vacancies</div>
+            <div className="font-semibold text-slate-900">
               {totalSeats > 0 ? `${applied}/${totalSeats} ` : "—"}
             </div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-center">
-            <div className="text-xs text-white/60">Apply in</div>
-            <div className={`font-medium ${daysLeft <= 0 ? "text-red-300" : ""}`}>
-              {daysLeft > 0 ? `${daysLeft} day${daysLeft > 1 ? "s" : ""}` : "Expired"}
+          <div className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-center">
+            <div className="text-xs text-slate-500 mb-0.5">Apply in</div>
+            <div className={`font-semibold ${daysLeft <= 0 ? "text-red-600" : "text-slate-900"}`}>
+              {daysLeft > 0 ? `${daysLeft}d` : "Expired"}
             </div>
           </div>
         </div>
 
         {/* CTA */}
-        <div className="mt-4 flex items-center justify-between">
-          <NeonButton
-            className="px-10 py-3 text-s"
+        <div className="mt-5 pt-5 border-t border-slate-100 flex items-center justify-between">
+          <button
+            className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors group/btn"
             onClick={() => (window.location.href = `/task/${task._id || task.id}`)}
           >
-            View Task <ArrowRight className="h-4 w-4" />
-          </NeonButton>
+            View Task <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+          </button>
 
 
           {/* Subtle pulse dot */}
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${daysLeft > 0 ? "bg-emerald-400" : "bg-red-400"} animate-pulse`} />
-            <span className="text-xs text-white/60">{applied} applied</span>
+          <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
+            <span className={`h-1.5 w-1.5 rounded-full ${daysLeft > 0 ? "bg-emerald-500" : "bg-red-500"} ${daysLeft > 0 && "animate-pulse"}`} />
+            <span className="text-xs font-medium text-slate-500">{applied} applied</span>
           </div>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 };
@@ -186,6 +184,10 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const Nav = useMemo(() => {
+    const last = sessionStorage.getItem("lastHomeRoute");
+    return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
+  }, []);
   // Filters
   const [selectedCategory, setSelectedCategory] = useState("");
   const [minBudget, setMinBudget] = useState("");
@@ -217,10 +219,11 @@ export default function Tasks() {
   // Filter logic
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      // 🚫 Skip sponsorship listings
+      // 🚫 Skip sponsorship listings AND event listings
+      const catStr = Array.isArray(task.category) ? task.category.join(" ") : String(task.category);
       if (
-        (Array.isArray(task.category) && task.category.includes("Sponsorship")) ||
-        task.category === "Sponsorship"
+        catStr.toLowerCase().includes("sponsorship") ||
+        catStr.toLowerCase().includes("event")
       ) {
         return false;
       }
@@ -251,30 +254,28 @@ export default function Tasks() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0c0c14] to-black text-gray-100">
-      <Navbar />
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <Nav />
 
-      <div className="mx-auto max-w-7xl px-4 py-20 flex gap-8">
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-20 flex flex-col md:flex-row gap-8">
         {/* Sidebar Filters */}
-        <aside className="w-72 hidden md:block space-y-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 h-fit sticky top-24 relative overflow-hidden shadow-[0_0_25px_rgba(236,72,153,0.5)]">
-          {/* Keep subtle border overlay */}
-          <div className="absolute inset-0 rounded-2xl border border-fuchsia-500/40 pointer-events-none" />
-          <h2 className="flex items-center gap-2 text-xl font-semibold mb-4">
-            <Filter className="h-5 w-5 text-fuchsia-400" />
-            <GradientText>Filters</GradientText>
+        <aside className="w-full md:w-72 space-y-8 rounded-lg border border-slate-200 bg-white p-6 h-fit md:sticky md:top-24 relative shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4">
+            <Filter className="h-5 w-5 text-blue-600" />
+            <span>Filters</span>
           </h2>
 
           {/* Category */}
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <Layers className="h-4 w-4 text-violet-400" /> Category
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Layers className="h-4 w-4 text-slate-500" /> Category
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm focus:ring-2 focus:ring-fuchsia-500 transition"
+              className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             >
-              <option value="">All</option>
+              <option value="">All Categories</option>
               <option value="Tech">Tech</option>
               <option value="Education">Education</option>
               <option value="Architecture">Architecture</option>
@@ -285,15 +286,15 @@ export default function Tasks() {
           </div>
 
           {/* Budget Dual Slider */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <Wallet className="h-4 w-4 text-sky-400" /> Budget (₹)
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Wallet className="h-4 w-4 text-slate-500" /> Budget Range
             </label>
-            <div className="flex items-center justify-between text-xs text-white/70 mb-1">
-              <span className="px-2 py-0.5 rounded-lg bg-white/10">{minBudget || "Min"}</span>
-              <span className="px-2 py-0.5 rounded-lg bg-white/10">{maxBudget || "Max"}</span>
+            <div className="flex items-center justify-between text-xs text-slate-500 font-medium tracking-wide">
+              <span className="bg-slate-100 px-2 py-1 rounded">₹{minBudget || "0"}</span>
+              <span className="bg-slate-100 px-2 py-1 rounded">₹{maxBudget || "1L+"}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 py-1">
               <input
                 type="range"
                 min="0"
@@ -301,7 +302,7 @@ export default function Tasks() {
                 step="1000"
                 value={minBudget}
                 onChange={(e) => setMinBudget(e.target.value)}
-                className="w-full accent-fuchsia-500"
+                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
               <input
                 type="range"
@@ -310,45 +311,45 @@ export default function Tasks() {
                 step="1000"
                 value={maxBudget}
                 onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-full accent-sky-500"
+                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
           </div>
 
           {/* Deadline */}
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <Calendar className="h-4 w-4 text-emerald-400" /> Deadline
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Calendar className="h-4 w-4 text-slate-500" /> Deadline
             </label>
             <select
               value={deadlineFilter}
               onChange={(e) => setDeadlineFilter(e.target.value)}
-              className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             >
-              <option value="">Any</option>
-              <option value="week">Within 1 week</option>
-              <option value="month">Within 1 month</option>
+              <option value="">Any Time</option>
+              <option value="week">Ending this week</option>
+              <option value="month">Ending this month</option>
             </select>
           </div>
 
           {/* Status Toggle */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <ToggleRight className="h-4 w-4 text-pink-400" /> Status
+          <div className="space-y-3 pt-4 border-t border-slate-100">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <ToggleRight className="h-4 w-4 text-slate-500" /> Status
             </label>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {["pending", "in-progress", "completed"].map((status) => (
-                <label key={status} className="flex items-center gap-2 cursor-pointer">
+                <label key={status} className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={statusFilter === status}
                     onChange={() => setStatusFilter(statusFilter === status ? "" : status)}
                     className="peer hidden"
                   />
-                  <span className="w-10 h-5 rounded-full bg-white/10 relative flex items-center">
-                    <span className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition ${statusFilter === status ? "translate-x-5 bg-fuchsia-500" : "bg-white/40"}`} />
-                  </span>
-                  <span className="capitalize text-white/70 peer-checked:text-white">{status}</span>
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${statusFilter === status ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300 group-hover:border-blue-400"}`}>
+                    {statusFilter === status && <Sparkles className="h-2.5 w-2.5 text-white" />}
+                  </div>
+                  <span className="capitalize text-sm text-slate-600 peer-checked:text-blue-700 peer-checked:font-medium transition-colors">{status.replace('-', ' ')}</span>
                 </label>
               ))}
             </div>
@@ -358,26 +359,28 @@ export default function Tasks() {
 
         {/* Task Grid */}
         <main className="flex-1">
-          <h1 className="text-3xl font-bold mb-6">
-            <GradientText>All Tasks</GradientText>
+          <h1 className="text-3xl font-bold mb-2 tracking-tight text-slate-900">
+            Find Work
           </h1>
+          <p className="text-slate-500 mb-8 max-w-2xl">
+            Discover active briefs, apply instantly, and start earning through secure escrow.
+          </p>
 
           {/* 🔍 Search Bar */}
-          <div className="relative mb-10">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 h-5 w-5" />
+          <div className="relative mb-10 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5 transition-colors group-focus-within:text-blue-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 py-3 text-sm text-white placeholder-white/40 focus:ring-2 focus:ring-fuchsia-500 transition"
+              placeholder="Search tasks by keyword (e.g., 'React developer', 'Logo design')"
+              className="w-full rounded-lg bg-white border border-slate-200 pl-12 pr-4 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm group-hover:border-slate-300"
             />
-            {/* Future: autosuggest dropdown */}
           </div>
 
 
           {loading ? (
-            <p className="text-gray-400">Loading tasks...</p>
+            <p className="text-slate-500 text-center py-20">Loading tasks...</p>
           ) : filteredTasks.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredTasks.map((task) => (
@@ -385,7 +388,19 @@ export default function Tasks() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-400">No tasks match your filters.</p>
+            <div className="text-center py-24 rounded-2xl border border-slate-200 bg-white border-dashed">
+              <div className="mx-auto h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                <Search className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-900">No tasks found</h3>
+              <p className="text-slate-500 max-w-sm mx-auto mt-2">Try adjusting your search or filters to find what you're looking for.</p>
+              <button
+                onClick={() => { setSelectedCategory(""); setMinBudget(""); setMaxBudget(""); setDeadlineFilter(""); setStatusFilter(""); setSearchQuery(""); }}
+                className="mt-6 text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Clear all filters
+              </button>
+            </div>
           )}
         </main>
       </div>

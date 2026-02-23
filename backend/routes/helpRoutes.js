@@ -2,7 +2,7 @@
 
 import express from "express";
 import { protect, requireAdmin } from "../middlewares/authMiddleware.js";
-import { upload } from "../middlewares/uploadMiddleware.js";
+import { upload, enforceTotalSize } from "../middlewares/uploadMiddleware.js";
 import {
   createTicket,
   postComment,
@@ -24,6 +24,7 @@ router.post(
   "/tickets",
   protect,
   upload.array("attachments", 5),
+  enforceTotalSize,
   validateBody(createTicketSchema),
   createTicket
 );
@@ -33,6 +34,7 @@ router.post(
   "/tickets/:id/comments",
   protect,
   upload.array("files", 5), // up to 5 files per comment
+  enforceTotalSize,
   validateBody(postCommentSchema),
   postComment
 );

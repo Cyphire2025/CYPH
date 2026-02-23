@@ -100,26 +100,38 @@ export const finaliseWorkroom = async (req, res) => {
     const updated = await Task.findOneAndUpdate({ _id: task._id }, { $set: update }, { new: true });
     const bothFinalised = updated.clientFinalised && updated.workerFinalised;
 
+    let finalisedAt = updated.finalisedAt || null;
+    const io = req.app.get("io");
     if (bothFinalised && !updated.finalisedAt) {
       const finalTime = new Date();
 
       await Task.updateOne({ _id: task._id }, { finalisedAt: finalTime });
+      finalisedAt = finalTime;
 
       // Set workroom messages to auto-expire after 7 days (MongoDB TTL index)
       const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await WorkroomMessages.updateOne({ workroomId }, { $set: { expireAt } });
 
       // Emit event to room (Socket.IO)
-      req.io?.to(`workroom:${workroomId}`).emit("workroom:finalised", {
+      io?.to(`workroom:${workroomId}`).emit("workroom:finalised", {
         workroomId,
         finalisedAt: finalTime,
       });
     }
 
+    io?.to(`workroom:${workroomId}`).emit("workroom:meta", {
+      workroomId,
+      clientFinalised: !!updated.clientFinalised,
+      workerFinalised: !!updated.workerFinalised,
+      finalisedAt,
+      bothFinalised,
+    });
+
     res.json({
       clientFinalised: updated.clientFinalised,
       workerFinalised: updated.workerFinalised,
-      finalisedAt: updated.finalisedAt || null,
+      finalisedAt,
+      bothFinalised,
     });
   } catch (e) {
     req.log.error("[WORKROOM] finaliseWorkroom error", e);
@@ -133,6 +145,8 @@ export const postMessage = async (req, res) => {
     const { workroomId } = req.params;
     const userId = req.user._id;
     const text = req.body.text?.trim() || "";
+    const clientTempId =
+      typeof req.body.clientTempId === "string" ? req.body.clientTempId.trim().slice(0, 120) : "";
     const task = await Task.findOne({ workroomId });
 
     if (!task) return res.status(404).json({ error: "Workroom not found" });
@@ -148,8 +162,8 @@ export const postMessage = async (req, res) => {
       if (result) uploaded.push({
         ...result,
         type: file.mimetype.startsWith("image/") ? "image"
-              : file.mimetype.startsWith("video/") ? "video"
-              : "file",
+          : file.mimetype.startsWith("video/") ? "video"
+            : "file",
       });
     }
 
@@ -171,18 +185,24 @@ export const postMessage = async (req, res) => {
     );
 
     const inserted = updated.messages[updated.messages.length - 1];
-
-    // Emit new message to room
-    req.io?.to(`workroom:${workroomId}`).emit("message:new", {
-      ...inserted,
+    const insertedObj = inserted?.toObject ? inserted.toObject() : inserted;
+    const payload = {
+      ...insertedObj,
+      workroomId,
+      senderId: String(req.user._id),
       sender: {
         _id: req.user._id,
         name: req.user.name,
         avatar: req.user.avatar,
       },
-    });
+    };
+    if (clientTempId) payload.clientTempId = clientTempId;
 
-    res.status(201).json({ item: inserted });
+    // Emit new message to room
+    const io = req.app.get("io");
+    io?.to(`workroom:${workroomId}`).emit("message:new", payload);
+
+    res.status(201).json({ item: payload });
   } catch (e) {
     req.log.error("[WORKROOM] postMessage error", e);
     res.status(500).json({ error: "Failed to send message" });

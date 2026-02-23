@@ -40,7 +40,8 @@
 
 // utils/csrfMiddleware.js
 
-// backend/utils/csrfMiddleware.js
+// utils/csrfMiddleware.js
+
 import crypto from "crypto";
 
 /**
@@ -49,17 +50,19 @@ import crypto from "crypto";
  * while still requiring a matching header (double-submit).
  */
 export function ensureCsrfCookie(req, res, next) {
-  const existing = req.cookies?.csrfToken;
+  const name = "csrfToken";
+  const existing = req.cookies?.[name];
+
+  // If no cookie exists, create one
   if (!existing) {
     const token = crypto.randomBytes(32).toString("base64url");
-
     const isProd = process.env.NODE_ENV === "production";
-    res.cookie("csrfToken", token, {
+
+    res.cookie(name, token, {
       httpOnly: false,                 // SPA needs to read it (via endpoint)
       sameSite: isProd ? "none" : "lax",
-      secure: isProd,                  // required for cross-site cookies
+      secure: isProd,                  // status depends on ENV
       path: "/",
-      // DO NOT set "domain" for cross-origin (Render) unless you fully control it
       maxAge: 1000 * 60 * 60 * 12,     // 12h
     });
   }
@@ -74,11 +77,25 @@ export function verifyDoubleSubmitCsrf(req, res, next) {
   const unsafe = ["POST", "PUT", "PATCH", "DELETE"];
   if (!unsafe.includes(req.method)) return next();
 
+  // Exemptions
+  const exemptPrefixes = [
+    "/api/admin/login",
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/google",
+    "/api/payment/webhook"
+  ];
+
+  if (exemptPrefixes.some(prefix => req.path.startsWith(prefix))) {
+    return next();
+  }
+
   const cookieToken = req.cookies?.csrfToken;
-  const headerToken = req.get("X-CSRF-Token");
+  const headerToken = req.get("X-CSRF-Token") || req.get("x-csrf-token");
 
   if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-    return res.status(403).json({ message: "Missing CSRF token" });
+    console.warn(`[CSRF] Blocked ${req.method} ${req.path} - Cookie: ${cookieToken ? 'Yes' : 'No'}, Header: ${headerToken ? 'Yes' : 'No'}`);
+    return res.status(403).json({ message: "Missing or invalid CSRF token" });
   }
   next();
 }

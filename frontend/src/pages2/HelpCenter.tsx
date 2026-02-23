@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, Suspense } from "react";
+import React, { useEffect, useRef, useState, Suspense, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, Send, X, CheckCircle2, Loader2, MessageSquare, Star, User, ShieldCheck, BadgeCheck
@@ -7,6 +7,7 @@ import { GradientText, GlassCard, NeonButton } from "../pages/home"; // Reuse ho
 
 import Navbarspon from "../components/navbarsponhome.jsx";
 import Navbarhome from "../components/navbarhome.jsx";
+import Footer from "../components/footer";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -67,6 +68,12 @@ const useFetch = <T,>(url: string, deps: any[] = [], options: RequestInit = {}) 
 export default function HelpCenter() {
   // --- FAQ ---
   const [openFaq, setOpenFaq] = useState(0);
+
+  // --- Navbar ---
+  const Nav = useMemo(() => {
+    const last = sessionStorage.getItem("lastHomeRoute");
+    return last === "/sponsorshiphome" ? Navbarspon : Navbarhome;
+  }, []);
 
   // --- Q&A ("Ask a question") ---
   const [question, setQuestion] = useState("");
@@ -195,43 +202,38 @@ export default function HelpCenter() {
 
   // --- MAIN UI ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#181822] to-[#050512] text-white relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 relative overflow-x-hidden font-sans">
       {/* Aurora & particles */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-tr from-violet-900/40 via-fuchsia-900/30 to-sky-900/30 blur-3xl" />
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute -inset-x-40 -top-40 h-[50rem] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.05),transparent_60%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.05),transparent_60%)]" />
       </div>
-      <div className="absolute inset-0 pointer-events-none -z-10">
-        {[...Array(30)].map((_, i) => (
-          <span key={i} className="absolute h-1 w-1 rounded-full bg-white/10 shadow-[0_0_6px_rgba(255,255,255,0.09)]"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `float${i % 3} ${8 + (i % 6)}s ease-in-out ${i * 0.11}s infinite`
-            }} />
-        ))}
-        <style>{`@keyframes float0{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-28px)}}@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-36px)}}`}</style>
-      </div>
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white to-transparent -z-10" />
 
-      <div className="mx-auto max-w-5xl px-4 py-16">
-        <motion.h1 layoutId="help-title" className="text-3xl md:text-5xl font-bold text-center mb-4">
+      <Suspense fallback={<div className="h-16" />}>
+        <Nav />
+      </Suspense>
+
+      <div className="mx-auto max-w-5xl px-4 pt-32 pb-16">
+        <motion.h1 layoutId="help-title" className="text-3xl md:text-5xl font-bold text-center mb-4 text-slate-900">
           <GradientText>Help Center</GradientText>
         </motion.h1>
-        <p className="text-white/70 text-center max-w-2xl mx-auto mb-10">Your questions, feedback, and support issues all in one place—fully private, with Discord-level support chat for every ticket.</p>
+        <p className="text-slate-600 text-center max-w-2xl mx-auto mb-10">Your questions, feedback, and support issues all in one place—fully private, with professional support chat for every ticket.</p>
 
         {/* FAQ Section */}
         <section className="mb-16">
           <SectionHeader id="faq-section" eyebrow="FAQs" title="Frequently Asked" subtitle="Find answers to the most common Cyphire support questions." />
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
-              <GlassCard key={faq.question} className="overflow-hidden">
-                <button className="flex w-full items-center justify-between px-6 py-4 text-left text-white/90 hover:bg-white/10 transition-colors" onClick={() => setOpenFaq(openFaq === i ? -1 : i)} aria-expanded={openFaq === i}>
-                  <span className="font-medium">{faq.question}</span>
-                  <ChevronDown className={classNames("h-5 w-5 transition-transform", openFaq === i && "rotate-180")} />
+              <GlassCard key={faq.question} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:border-blue-200 transition-colors">
+                <button className="flex w-full items-center justify-between px-6 py-4 text-left text-slate-900 hover:bg-slate-50 transition-colors" onClick={() => setOpenFaq(openFaq === i ? -1 : i)} aria-expanded={openFaq === i}>
+                  <span className="font-semibold">{faq.question}</span>
+                  <ChevronDown className={classNames("h-5 w-5 transition-transform text-blue-500", openFaq === i && "rotate-180")} />
                 </button>
                 <AnimatePresence initial={false}>
                   {openFaq === i && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
-                      <div className="px-6 pb-5 text-sm text-white/80">{faq.answer}</div>
+                      <div className="px-6 pb-5 text-sm text-slate-600 leading-relaxed">{faq.answer}</div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -244,7 +246,7 @@ export default function HelpCenter() {
         <section className="mb-14">
           <SectionHeader id="ask-question" eyebrow="Ask a Question" title="Not finding your answer?" subtitle="Submit a quick question—our team will reply in the feed below." />
           <form className="flex flex-col gap-4 max-w-xl mx-auto" onSubmit={askQuestion}>
-            <textarea className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/90 backdrop-blur-xl focus:border-fuchsia-400/50 focus:ring-fuchsia-400/50 transition-colors min-h-[60px] resize-none" value={question} onChange={e => setQuestion(e.target.value)} maxLength={300} required placeholder="Type your question here..." />
+            <textarea className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-400 focus:ring-blue-400/20 transition-colors min-h-[60px] resize-none shadow-sm" value={question} onChange={e => setQuestion(e.target.value)} maxLength={300} required placeholder="Type your question here..." />
             <div className="flex items-center gap-3 justify-between">
               <NeonButton type="submit" loading={qaLoading} className="text-sm px-6 py-2 rounded-xl">Send <Send className="h-4 w-4" /></NeonButton>
               {qaSuccess && <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="h-4 w-4" /> {qaSuccess}</span>}
@@ -252,13 +254,13 @@ export default function HelpCenter() {
             </div>
           </form>
           <div className="mt-8">
-            <h3 className="text-xl font-semibold mb-4 text-white flex items-center gap-2"><MessageSquare className="h-5 w-5 text-fuchsia-400" /> Recently Answered Questions</h3>
+            <h3 className="text-xl font-bold mb-4 text-slate-900 flex items-center gap-2"><MessageSquare className="h-5 w-5 text-blue-500" /> Recently Answered Questions</h3>
             <div className="space-y-3">
-              {recentQas.length === 0 && <div className="text-white/60">No questions answered yet.</div>}
+              {recentQas.length === 0 && <div className="text-slate-500">No questions answered yet.</div>}
               {recentQas.map(qa => (
-                <GlassCard key={qa._id} className="p-4">
-                  <div className="font-medium text-white/90 mb-1">{qa.question}</div>
-                  <div className="text-white/70 text-sm">{qa.answer}</div>
+                <GlassCard key={qa._id} className="p-4 border-slate-200 bg-white shadow-sm">
+                  <div className="font-semibold text-slate-900 mb-1">{qa.question}</div>
+                  <div className="text-slate-600 text-sm">{qa.answer}</div>
                 </GlassCard>
               ))}
             </div>
@@ -272,26 +274,26 @@ export default function HelpCenter() {
             <NeonButton onClick={() => setShowNewTicket(true)} className="whitespace-nowrap">+ New Ticket</NeonButton>
           </div>
           {ticketLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-fuchsia-400" /></div>
+            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
           ) : (
             <div className="grid gap-3">
-              {myTickets.length === 0 && <GlassCard className="p-6 text-center text-white/70">No tickets yet. Submit a new support issue above.</GlassCard>}
+              {myTickets.length === 0 && <GlassCard className="p-6 text-center text-slate-500 border-slate-200 bg-white border-dashed">No tickets yet. Submit a new support issue above.</GlassCard>}
               {myTickets.map(tk => (
-                <GlassCard key={tk._id} className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <GlassCard key={tk._id} className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                   <div>
-                    <div className="font-medium text-white">{tk.subject}</div>
+                    <div className="font-bold text-slate-900">{tk.subject}</div>
                     <div className="flex items-center gap-2 text-xs mt-1">
                       <span className={classNames(
-                        "rounded-full px-2 py-0.5 font-semibold",
-                        tk.status === "open" && "bg-emerald-400/10 text-emerald-300 border border-emerald-400/30",
-                        tk.status === "closed" && "bg-red-400/10 text-red-300 border border-red-400/30",
-                        tk.status === "in-progress" && "bg-amber-400/10 text-amber-300 border border-amber-400/30",
-                        tk.status === "resolved" && "bg-sky-400/10 text-sky-300 border border-sky-400/30"
+                        "rounded-full px-2 py-0.5 font-semibold border",
+                        tk.status === "open" && "bg-emerald-50 text-emerald-700 border-emerald-200",
+                        tk.status === "closed" && "bg-red-50 text-red-700 border-red-200",
+                        tk.status === "in-progress" && "bg-amber-50 text-amber-700 border-amber-200",
+                        tk.status === "resolved" && "bg-sky-50 text-sky-700 border-sky-200"
                       )}>{tk.status}</span>
-                      <span className="text-white/60">{new Date(tk.createdAt).toLocaleString()}</span>
+                      <span className="text-slate-500">{new Date(tk.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
-                  <button onClick={() => { setActiveTicket(tk); setShowTicketModal(true); }} className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition">View Thread</button>
+                  <button onClick={() => { setActiveTicket(tk); setShowTicketModal(true); }} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:border-blue-200 transition font-medium">View Thread</button>
                 </GlassCard>
               ))}
             </div>
@@ -299,17 +301,19 @@ export default function HelpCenter() {
         </section>
       </div>
 
+      <Footer />
+
       {/* --- New Ticket Modal --- */}
       <AnimatePresence>
         {showNewTicket && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
-            <GlassCard className="relative w-full max-w-lg p-8 mx-2 flex flex-col gap-6">
-              <button className="absolute right-3 top-3 text-white/50 hover:text-fuchsia-400" onClick={() => setShowNewTicket(false)}><X className="h-5 w-5" /></button>
-              <h2 className="text-2xl font-bold mb-2 text-white">New Support Ticket</h2>
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <GlassCard className="relative w-full max-w-lg p-8 mx-2 flex flex-col gap-6 bg-white border-slate-200 shadow-2xl">
+              <button className="absolute right-3 top-3 text-slate-400 hover:text-slate-600" onClick={() => setShowNewTicket(false)}><X className="h-5 w-5" /></button>
+              <h2 className="text-2xl font-bold mb-2 text-slate-900">New Support Ticket</h2>
               <form className="flex flex-col gap-4" onSubmit={submitTicket}>
                 <div className="flex gap-3">
-                  <select className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 flex-1" required value={newTicket.type} onChange={e => setNewTicket(t => ({ ...t, type: e.target.value }))}>
+                  <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 flex-1 focus:border-blue-300 focus:ring-blue-300/20" required value={newTicket.type} onChange={e => setNewTicket(t => ({ ...t, type: e.target.value }))}>
                     <option value="other">Type</option>
                     <option value="payment">Payment</option>
                     <option value="task">Task</option>
@@ -317,16 +321,16 @@ export default function HelpCenter() {
                     <option value="account">Account</option>
                     <option value="report">Report</option>
                   </select>
-                  <input className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 flex-1" type="text" placeholder="Subject" required value={newTicket.subject} onChange={e => setNewTicket(t => ({ ...t, subject: e.target.value }))} maxLength={100} />
+                  <input className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 flex-1 focus:border-blue-300 focus:ring-blue-300/20" type="text" placeholder="Subject" required value={newTicket.subject} onChange={e => setNewTicket(t => ({ ...t, subject: e.target.value }))} maxLength={100} />
                 </div>
-                <textarea className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 min-h-[72px]" required maxLength={500} placeholder="Describe your issue..." value={newTicket.description} onChange={e => setNewTicket(t => ({ ...t, description: e.target.value }))} />
+                <textarea className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 min-h-[72px] focus:border-blue-300 focus:ring-blue-300/20" required maxLength={500} placeholder="Describe your issue..." value={newTicket.description} onChange={e => setNewTicket(t => ({ ...t, description: e.target.value }))} />
                 <div>
                   <input type="file" multiple accept="image/*,application/pdf" onChange={e => setTicketFiles(Array.from(e.target.files || []))} />
                   <div className="text-xs text-white/50 mt-1">{ticketFiles.length > 0 && ticketFiles.map(f => f.name).join(", ")}</div>
                 </div>
                 {newTicketError && <div className="text-red-400 text-xs">{newTicketError}</div>}
                 <div className="flex justify-end gap-2">
-                  <button type="button" className="rounded-xl border border-white/10 bg-white/5 px-5 py-2 text-white/70 hover:bg-white/10 transition" onClick={() => setShowNewTicket(false)}>Cancel</button>
+                  <button type="button" className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-slate-600 hover:bg-slate-50 transition" onClick={() => setShowNewTicket(false)}>Cancel</button>
                   <NeonButton type="submit" loading={newTicketLoading} className="px-8 py-2 text-sm">Submit</NeonButton>
                 </div>
               </form>
@@ -339,17 +343,17 @@ export default function HelpCenter() {
       <AnimatePresence>
         {showTicketModal && activeTicket && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
-            <GlassCard className="relative w-full max-w-2xl p-8 mx-2 flex flex-col gap-6 min-h-[440px]">
-              <button className="absolute right-3 top-3 text-white/50 hover:text-fuchsia-400" onClick={() => setShowTicketModal(false)}><X className="h-5 w-5" /></button>
-              <h2 className="text-2xl font-bold mb-2 text-white flex items-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-fuchsia-400" /> Ticket Thread
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <GlassCard className="relative w-full max-w-2xl p-8 mx-2 flex flex-col gap-6 min-h-[440px] bg-white border-slate-200 shadow-2xl">
+              <button className="absolute right-3 top-3 text-slate-400 hover:text-slate-600" onClick={() => setShowTicketModal(false)}><X className="h-5 w-5" /></button>
+              <h2 className="text-2xl font-bold mb-2 text-slate-900 flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-blue-500" /> Ticket Thread
                 <span className={classNames(
-                  "ml-2 rounded-full px-2 py-0.5 text-xs font-semibold",
-                  activeTicket.status === "open" && "bg-emerald-400/10 text-emerald-300 border border-emerald-400/30",
-                  activeTicket.status === "closed" && "bg-red-400/10 text-red-300 border border-red-400/30",
-                  activeTicket.status === "in-progress" && "bg-amber-400/10 text-amber-300 border border-amber-400/30",
-                  activeTicket.status === "resolved" && "bg-sky-400/10 text-sky-300 border border-sky-400/30"
+                  "ml-2 rounded-full px-2 py-0.5 text-xs font-semibold border",
+                  activeTicket.status === "open" && "bg-emerald-50 text-emerald-700 border-emerald-200",
+                  activeTicket.status === "closed" && "bg-red-50 text-red-700 border-red-200",
+                  activeTicket.status === "in-progress" && "bg-amber-50 text-amber-700 border-amber-200",
+                  activeTicket.status === "resolved" && "bg-sky-50 text-sky-700 border-sky-200"
                 )}>{activeTicket.status}</span>
               </h2>
               <div className="flex-1 min-h-[200px] max-h-[340px] overflow-y-auto space-y-3 py-2">
@@ -359,26 +363,26 @@ export default function HelpCenter() {
                       "flex gap-3 items-start",
                       msg.author.role === "admin" ? "flex-row-reverse text-right" : ""
                     )}>
-                      <img src={msg.author.avatar || (msg.author.role === "admin" ? "/admin-avatar.png" : "/user-avatar.png")} alt={msg.author.name} className="h-10 w-10 rounded-full border border-white/10 object-cover" />
+                      <img src={msg.author.avatar || (msg.author.role === "admin" ? "/admin-avatar.png" : "/user-avatar.png")} alt={msg.author.name} className="h-10 w-10 rounded-full border border-slate-200 object-cover bg-white" />
                       <div className={classNames(
-                        "rounded-xl px-5 py-3 max-w-[75%] flex-1 text-sm",
-                        msg.author.role === "admin" ? "bg-fuchsia-900/20 border border-fuchsia-400/20 text-fuchsia-100" : "bg-white/10 border border-white/10 text-white"
+                        "rounded-xl px-5 py-3 max-w-[75%] flex-1 text-sm shadow-sm",
+                        msg.author.role === "admin" ? "bg-blue-50 border border-blue-100 text-slate-800" : "bg-white border border-slate-200 text-slate-800"
                       )}>
-                        <div className="font-semibold flex items-center gap-1.5 mb-1">
+                        <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900">
                           {msg.author.name}
-                          {msg.author.role === "admin" ? <BadgeCheck className="h-4 w-4 text-fuchsia-400"  /> : <User className="h-4 w-4 text-white/70"  />}
+                          {msg.author.role === "admin" ? <BadgeCheck className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-slate-400" />}
                         </div>
-                        <div className="mb-1 whitespace-pre-line">{msg.text}</div>
+                        <div className="mb-1 whitespace-pre-line leading-relaxed">{msg.text}</div>
                         {msg.files && msg.files.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             {msg.files.map((f, fi) => (
-                              <a key={fi} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/20 bg-black/20 text-xs text-fuchsia-200 hover:bg-fuchsia-900/20 transition">
+                              <a key={fi} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-200 bg-slate-50 text-xs text-blue-600 hover:bg-blue-50 transition">
                                 <Star className="h-4 w-4" /> {f.original_name}
                               </a>
                             ))}
                           </div>
                         )}
-                        <div className="mt-1 text-xs text-white/40">{new Date(msg.createdAt).toLocaleString()}</div>
+                        <div className="mt-1 text-xs text-slate-400">{new Date(msg.createdAt).toLocaleString()}</div>
                       </div>
                     </div>
                   </motion.div>
@@ -386,10 +390,10 @@ export default function HelpCenter() {
               </div>
               {activeTicket.status !== "closed" ? (
                 <form className="flex flex-col gap-2" onSubmit={e => { e.preventDefault(); submitComment(activeTicket._id); }}>
-                  <textarea className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 min-h-[50px]" maxLength={300} placeholder="Type your reply..." value={chatText} onChange={e => setChatText(e.target.value)} required />
+                  <textarea className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 min-h-[50px] focus:border-blue-300 focus:ring-blue-300/20" maxLength={300} placeholder="Type your reply..." value={chatText} onChange={e => setChatText(e.target.value)} required />
                   <div className="flex gap-2 items-center">
                     <input type="file" multiple accept="image/*,application/pdf" onChange={e => setChatFiles(Array.from(e.target.files || []))} />
-                    {chatFiles.length > 0 && <span className="text-xs text-white/50">{chatFiles.map(f => f.name).join(", ")}</span>}
+                    {chatFiles.length > 0 && <span className="text-xs text-slate-500">{chatFiles.map(f => f.name).join(", ")}</span>}
                     <NeonButton type="submit" loading={chatLoading} className="ml-auto text-sm">Send <Send className="h-4 w-4" /></NeonButton>
                   </div>
                 </form>
@@ -407,7 +411,7 @@ export default function HelpCenter() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }
 
@@ -415,9 +419,9 @@ export default function HelpCenter() {
 function SectionHeader({ id, eyebrow, title, subtitle }: { id: string; eyebrow?: string; title: string; subtitle?: string }) {
   return (
     <header id={id} className="mx-auto mb-6 text-center">
-      {eyebrow && <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">{eyebrow}</div>}
-      <h2 className="text-2xl md:text-3xl font-bold"><GradientText>{title}</GradientText></h2>
-      {subtitle && <p className="mt-2 text-white/70">{subtitle}</p>}
+      {eyebrow && <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs text-blue-700 font-medium">{eyebrow}</div>}
+      <h2 className="text-2xl md:text-3xl font-bold text-slate-900"><GradientText>{title}</GradientText></h2>
+      {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
     </header>
   );
 }

@@ -18,7 +18,7 @@ import {
 import UserView from "./usersview"
 import TasksView from "./tasksview";
 import PaymentsView from "./paymentsview";
-import QuestionsView from "./questionsview"; 
+import QuestionsView from "./questionsview";
 import TicketsView from "./ticketsview";
 import { apiFetch } from "../lib/fetch";
 
@@ -42,9 +42,14 @@ const menuItems = [
 export default function AdminDashboard() {
   const [active, setActive] = useState("overview");
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin-token");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      await apiFetch(`${API_BASE}/api/admin/logout`, { method: "POST" });
+    } catch (_) {
+      // Ignore network errors and still redirect out of the dashboard.
+    } finally {
+      window.location.href = "/login";
+    }
   };
 
   const renderSection = () => {
@@ -59,9 +64,9 @@ export default function AdminDashboard() {
         return <WorkroomViewer />;
       case "payments":
         return <PaymentsView />;
-      case "questions": 
+      case "questions":
         return <QuestionsView />;
-      case "tickets": 
+      case "tickets":
         return <TicketsView />;
       default:
         return null;
@@ -117,21 +122,12 @@ const Overview = () => {
 
 
   useEffect(() => {
-    const token = localStorage.getItem("admin-token");
-    fetch(`${API_BASE}/api/admin/stats/users`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+        apiFetch(`${API_BASE}/api/admin/stats/users`)
       .then((res) => res.json())
       .then((data) => setUsers(data.total))
       .catch(() => setUsers("❌ Error"));
 
-    fetch(`${API_BASE}/api/admin/stats/tasks`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    apiFetch(`${API_BASE}/api/admin/stats/tasks`)
       .then((res) => res.json())
       .then((data) => setTasks(data.total))
       .catch(() => setTasks("❌ Error"));
@@ -219,3 +215,5 @@ const WorkroomViewer = () => {
     </div>
   );
 };
+
+

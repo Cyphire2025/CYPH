@@ -27,6 +27,7 @@ import { connectDB } from "./config/mongodb.js";
 import "./config/passport.js";
 import { verifyJwt } from "./utils/jwt.js";
 import Task from "./models/taskModel.js";
+import User from "./models/userModel.js";
 
 // CSRF middleware from your utils (double-submit validator)
 import { verifyDoubleSubmitCsrf } from "./utils/csrfMiddleware.js";
@@ -154,18 +155,50 @@ app.use("/uploads", express.static("uploads"));
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://localhost:5175",
   "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
   "https://cyphire-frontend.vercel.app",
   "https://cyphire-workroom.vercel.app",
   "https://cyphire-admin.vercel.app",
 ]);
-const isVercelPreview = (origin) => {
+
+const VERCEL_PREVIEW_PROJECTS = new Set(
+  (process.env.CORS_VERCEL_PREVIEW_PROJECTS ||
+    "cyphire-frontend,cyphire-workroom,cyphire-admin")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+const isTrustedVercelPreview = (origin) => {
   try {
-    return /\.vercel\.app$/i.test(new URL(origin).hostname);
+    const parsed = new URL(origin);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    if (!host.endsWith(".vercel.app")) return false;
+
+    const hostnameWithoutSuffix = host.slice(0, -".vercel.app".length);
+    if (!hostnameWithoutSuffix) return false;
+
+    for (const project of VERCEL_PREVIEW_PROJECTS) {
+      if (
+        hostnameWithoutSuffix === project ||
+        hostnameWithoutSuffix.startsWith(`${project}-`) ||
+        hostnameWithoutSuffix.endsWith(`.${project}`)
+      ) {
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }
 };
+
+const isAllowedCorsOrigin = (origin) =>
+  ALLOWED_ORIGINS.has(origin) || isTrustedVercelPreview(origin);
 
 app.use((_, res, next) => {
   // better cache behavior with varying origins
@@ -177,7 +210,7 @@ app.use(
   cors({
     origin(origin, cb) {
       if (!origin) return cb(null, true); // server-to-server / curl
-      if (ALLOWED_ORIGINS.has(origin) || isVercelPreview(origin)) return cb(null, true);
+      if (isAllowedCorsOrigin(origin)) return cb(null, true);
       return cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -191,6 +224,7 @@ app.use(
       "Pragma",
       "If-Modified-Since",
       "If-None-Match",
+      "X-Device-Fingerprint",
     ],
   })
 );
@@ -261,21 +295,79 @@ const io = new Server(server, {
   cors: {
     origin(origin, cb) {
       if (!origin) return cb(null, true);
-      if (ALLOWED_ORIGINS.has(origin) || isVercelPreview(origin)) return cb(null, true);
+      if (isAllowedCorsOrigin(origin)) return cb(null, true);
       return cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
   },
 });
 
-io.use((socket, next) => {
+const parseCookieHeader = (cookieHeader = "") => {
+  if (!cookieHeader || typeof cookieHeader !== "string") return {};
+  return cookieHeader.split(";").reduce((acc, segment) => {
+    const trimmed = segment.trim();
+    if (!trimmed) return acc;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx === -1) return acc;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const value = trimmed.slice(eqIdx + 1).trim();
+    if (key) {
+      try {
+        acc[key] = decodeURIComponent(value);
+      } catch {
+        acc[key] = value;
+      }
+    }
+    return acc;
+  }, {});
+};
+
+const getSocketToken = (socket) => {
+  const authToken = socket.handshake.auth?.token;
+  if (authToken) return authToken;
+
+  const authHeader = socket.handshake.headers?.authorization || "";
+  if (typeof authHeader === "string" && authHeader.toLowerCase().startsWith("bearer ")) {
+    return authHeader.slice(7).trim();
+  }
+
+  const cookies = parseCookieHeader(socket.handshake.headers?.cookie || "");
+  return cookies.token || "";
+};
+
+const assertSocketCanAccessWorkroom = async (workroomId, socketUser) => {
+  const task = await Task.findOne({ workroomId }).select("createdBy selectedApplicant");
+  if (!task) return { ok: false, code: "not_found" };
+
+  const uid = socketUser?._id;
+  const allowed =
+    !!uid &&
+    (String(task.createdBy) === uid ||
+      String(task.selectedApplicant || "") === uid ||
+      socketUser?.isAdmin);
+
+  if (!allowed) return { ok: false, code: "forbidden" };
+  return { ok: true };
+};
+
+io.use(async (socket, next) => {
   try {
-    const raw =
-      socket.handshake.auth?.token ||
-      (socket.handshake.headers?.authorization || "").split(" ")[1];
+    const raw = getSocketToken(socket);
     if (!raw) return next(new Error("Unauthorized"));
     const payload = verifyJwt(raw);
-    socket.user = { _id: String(payload._id || payload.id), isAdmin: !!payload.isAdmin };
+    const authUserId = String(payload?._id || payload?.id || "");
+    if (!authUserId) return next(new Error("Unauthorized"));
+
+    const user = await User.findById(authUserId).select("_id isAdmin tokenVersion name");
+    if (!user) return next(new Error("Unauthorized"));
+
+    const tokenVersionFromJwt = Number(payload?.tv ?? payload?.tokenVersion ?? 0);
+    const tokenVersionFromDb = Number(user.tokenVersion || 0);
+    if (tokenVersionFromJwt !== tokenVersionFromDb) {
+      return next(new Error("Unauthorized"));
+    }
+
+    socket.user = { _id: String(user._id), isAdmin: !!user.isAdmin, name: user.name || "User" };
     return next();
   } catch (err) {
     return next(new Error("Unauthorized"));
@@ -283,19 +375,14 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  logger.info(`🔌 socket connected ${socket.id}`);
+  logger.info(`socket connected ${socket.id}`);
 
   socket.on("workroom:join", async ({ workroomId }) => {
     try {
-      const task = await Task.findOne({ workroomId }).select("createdBy selectedApplicant");
-      if (!task) return socket.emit("error", "Workroom not found");
-      const uid = socket.user?._id;
-      const allowed =
-        uid &&
-        (String(task.createdBy) === uid ||
-          String(task.selectedApplicant) === uid ||
-          socket.user.isAdmin);
-      if (!allowed) return socket.emit("error", "Forbidden");
+      const access = await assertSocketCanAccessWorkroom(workroomId, socket.user);
+      if (!access.ok) {
+        return socket.emit("error", access.code === "not_found" ? "Workroom not found" : "Forbidden");
+      }
       socket.join(`workroom:${workroomId}`);
       socket.emit("joined", { ok: true });
     } catch {
@@ -305,19 +392,20 @@ io.on("connection", (socket) => {
 
   socket.on("message:new", async ({ workroomId, text, attachments = [] }, ack) => {
     try {
-      const task = await Task.findOne({ workroomId }).select("createdBy selectedApplicant");
-      if (!task) return ack?.({ ok: false, error: "Workroom not found" });
+      const access = await assertSocketCanAccessWorkroom(workroomId, socket.user);
+      if (!access.ok) {
+        return ack?.({
+          ok: false,
+          error: access.code === "not_found" ? "Workroom not found" : "Forbidden",
+        });
+      }
       const uid = socket.user?._id;
-      const allowed =
-        uid &&
-        (String(task.createdBy) === uid ||
-          String(task.selectedApplicant) === uid ||
-          socket.user.isAdmin);
-      if (!allowed) return ack?.({ ok: false, error: "Forbidden" });
       io.to(`workroom:${workroomId}`).emit("message:new", {
+        workroomId,
         text,
         attachments,
-        sender: uid,
+        sender: { _id: uid, name: socket.user?.name || "User" },
+        senderId: uid,
         createdAt: new Date().toISOString(),
       });
       ack?.({ ok: true });
@@ -326,15 +414,53 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => logger.info(`❌ socket disconnected ${socket.id}`));
+  socket.on("typing", async ({ workroomId }) => {
+    try {
+      const access = await assertSocketCanAccessWorkroom(workroomId, socket.user);
+      if (!access.ok) return;
+      socket.to(`workroom:${workroomId}`).emit("typing", {
+        workroomId,
+        userId: socket.user?._id,
+        senderName: socket.user?.name || "Collaborator",
+      });
+    } catch {
+      // no-op
+    }
+  });
+
+  socket.on("typing:stop", async ({ workroomId }) => {
+    try {
+      const access = await assertSocketCanAccessWorkroom(workroomId, socket.user);
+      if (!access.ok) return;
+      socket.to(`workroom:${workroomId}`).emit("typing:stop", {
+        workroomId,
+        userId: socket.user?._id,
+      });
+    } catch {
+      // no-op
+    }
+  });
+
+  socket.on("message:react", async ({ workroomId, messageId, reaction }) => {
+    try {
+      const access = await assertSocketCanAccessWorkroom(workroomId, socket.user);
+      if (!access.ok) return;
+      io.to(`workroom:${workroomId}`).emit("message:reaction", {
+        workroomId,
+        messageId,
+        reaction: reaction || null,
+        senderId: socket.user?._id,
+        senderName: socket.user?.name || "User",
+      });
+    } catch {
+      // no-op
+    }
+  });
+
+  socket.on("disconnect", () => logger.info(`socket disconnected ${socket.id}`));
 });
 
-// make io available in routes if needed
-app.use((req, _res, next) => {
-  req.io = io;
-  next();
-});
-
+app.set("io", io);
 // ───────────────────────────────────────────────────────────────────────────────
 // Global error handler
 // ───────────────────────────────────────────────────────────────────────────────
@@ -371,7 +497,7 @@ connectDB()
         if (mongoose?.connection?.close) {
           mongoose.connection.close(false, () => logger.info("MongoDB closed"));
         }
-      } catch {}
+      } catch { }
       process.exit(0);
     });
   })

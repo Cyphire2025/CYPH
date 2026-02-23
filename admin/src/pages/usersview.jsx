@@ -31,21 +31,8 @@ export default function UsersView() {
 
   // Reusable fetch function
   const fetchUsers = async () => {
-    const token = localStorage.getItem("admin-token");
-    if (!token) {
-      setError("Please log in as admin to view users");
-      setUsers([]);
-      setFiltered([]);
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await apiFetch(`${API_BASE}/api/admin/users`);
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) {
         console.error("Users fetch error:", data.error || res.statusText);
@@ -100,12 +87,8 @@ export default function UsersView() {
   // Delete user
   const handleDelete = async (id) => {
     if (!confirm("Are you sure?")) return;
-    const token = localStorage.getItem("admin-token");
     const res = await apiFetch(`${API_BASE}/api/admin/users/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-      },
     });
 
     if (res.ok) {
@@ -119,13 +102,8 @@ export default function UsersView() {
 
   // Set plan
   const handleSetPlan = async (id, plan) => {
-    const token = localStorage.getItem("admin-token");
     const res = await apiFetch(`${API_BASE}/api/admin/users/${id}/plan`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
       body: JSON.stringify({ plan }),
     });
 

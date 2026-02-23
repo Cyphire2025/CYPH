@@ -1,50 +1,48 @@
-// routes/authRoutes.js
-
 import express from "express";
-import { protect } from "../middlewares/authMiddleware.js";
-import {
-  emailSignup,
-  emailSignin,
-  googleAuth,
-  googleCallback,
-  signout,
-  me,
-  getNotifications,
-  markNotificationRead,
-  deleteNotification,
-} from "../controllers/authController.js";
-import { validateBody } from "../middlewares/validate.js";
+import * as authController from "../controllers/authController.js";
 import { signupSchema, signinSchema } from "../schemas/authSchemas.js";
-import { requireFlag } from "../middlewares/flags.js";
+import { validateBody } from "../middlewares/validate.js";
+import { protect } from "../middlewares/authMiddleware.js";
+import { buildLimiter, authSlowDown } from "../middlewares/rateLimiter.js";
 
 const router = express.Router();
 
-router.use(requireFlag("FLAG_AUTH", "1"));
+const signinLimiter = buildLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  prefix: "rl:auth:signin:",
+  message: { error: "Too many sign-in attempts. Please try again later." },
+});
+
 /*
-|--------------------------------------------------------------------------  
-| AUTH ROUTES (Google/Amazon-level structure)  
-|--------------------------------------------------------------------------  
-| All auth, session, and notification endpoints.  
-| Add per-endpoint rate limiting middleware where necessary for scale:  
-|   e.g. router.post("/signin", rateLimiter({ windowMs: 15*60*1000, max: 25 }), emailSignin);  
-|--------------------------------------------------------------------------  
-*/
+ * OTP routes are intentionally disabled for now.
+ * Keep controller/schema implementations in place until OTP rollout resumes.
+ */
 
-// --- Email/Password Authentication ---
-router.post("/signup", validateBody(signupSchema), emailSignup);
-router.post("/signin", validateBody(signinSchema), emailSignin);
+// Simple email/password signup
+router.post("/signup", validateBody(signupSchema), authController.emailSignup);
 
-// --- Google OAuth ---
-router.get("/google", googleAuth);
-router.get("/google/callback", googleCallback);
+// Simple email/password signin
+router.post(
+  "/signin",
+  signinLimiter,
+  authSlowDown,
+  validateBody(signinSchema),
+  authController.emailSignin
+);
 
-// --- Authenticated User Info & Session Control ---
-router.get("/me", protect, me);
-router.post("/signout", signout);
+// Google OAuth
+router.get("/google", authController.googleAuth);
+router.get("/google/callback", authController.googleCallback);
 
-// --- Notifications ---
-router.get("/notifications", protect, getNotifications);
-router.post("/notifications/:idx/read", protect, markNotificationRead);
-router.delete("/notifications/:idx", protect, deleteNotification);
+// Authenticated profile
+router.get("/me", protect, authController.getMe);
+router.get("/notifications", protect, authController.getNotifications);
+router.post("/notifications/:idx/read", protect, authController.markNotificationRead);
+router.delete("/notifications/:idx", protect, authController.deleteNotification);
+
+// Logout aliases
+router.post("/logout", protect, authController.logout);
+router.post("/signout", protect, authController.logout);
 
 export default router;

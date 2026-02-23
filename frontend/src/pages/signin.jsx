@@ -9,7 +9,6 @@ import {
   FiLock,
   FiEye,
   FiEyeOff,
-  FiZap,
   FiArrowRight,
   FiClock,
   FiTrendingUp,
@@ -119,13 +118,6 @@ export default function Signin() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.message || "Login failed");
 
-        /* your original storage / cookie pattern */
-        const store = remember ? localStorage : sessionStorage;
-        if (data?.user?.id) store.setItem("userId", data.user.id);
-        if (data?.user?.name) store.setItem("userName", data.user.name);
-        if (data?.user?.email) store.setItem("userEmail", data.user.email);
-        store.setItem("loginTime", Date.now().toString());
-
         navigate(redirectPath, { replace: true });
       } catch (err) {
         toast.error(err.message || "Sign-in failed");
@@ -138,10 +130,12 @@ export default function Signin() {
 
   /* ─────────────────────── UI ─────────────────────── */
   return (
-    <div className="min-h-screen bg-[#05050a] text-white flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Glows */}
-      <div className="absolute -top-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-fuchsia-500/20 blur-[120px]" />
-      <div className="absolute -bottom-44 -right-40 h-[30rem] w-[30rem] rounded-full bg-sky-500/25 blur-[120px]" />
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center px-4 py-8 relative overflow-hidden font-sans">
+      {/* Dynamic Background Pattern */}
+      <div className="absolute inset-0 -z-10 h-full w-full bg-slate-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-blue-400 opacity-20 blur-[100px]"></div>
+        <div className="absolute right-0 bottom-0 -z-10 h-[310px] w-[310px] rounded-full bg-indigo-400 opacity-20 blur-[100px]"></div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
@@ -149,34 +143,46 @@ export default function Signin() {
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="w-full max-w-5xl relative z-10"
       >
-        <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-violet-500/30 via-fuchsia-500/20 to-sky-500/30 blur-xl" />
-        <div className="relative flex flex-col lg:flex-row overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-2xl shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+        <div className="relative flex flex-col lg:flex-row overflow-hidden rounded-3xl border border-slate-200 bg-white/80 backdrop-blur-xl shadow-2xl">
           {/* LEFT side – Welcome Back / Stats */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
-            className="flex-1 bg-gradient-to-br from-[#100018]/70 via-[#080015]/70 to-[#001020]/70 p-8 lg:p-12 flex flex-col justify-between"
+            className="flex-1 bg-blue-900 p-8 lg:p-12 flex flex-col justify-between text-white relative overflow-hidden"
           >
-            <div>
-              <h1 className="text-3xl font-bold text-white/95">
-                Welcome back to <span className="text-fuchsia-300">Cyphire</span>.
+            {/* Texture overlay for blue panel */}
+            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat pointer-events-none" />
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500 blur-3xl opacity-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 h-64 w-64 rounded-full bg-indigo-500 blur-3xl opacity-20 pointer-events-none" />
+
+            <div className="relative z-10">
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                Welcome back to <span className="text-blue-200">Cyphire</span>.
               </h1>
-              <p className="mt-3 text-white/70 max-w-sm">
+              <p className="mt-4 text-blue-100/90 max-w-sm text-lg leading-relaxed">
                 Continue your journey of innovation, collaboration, and lightning-fast
                 productivity.
               </p>
 
-              <div className="mt-8 grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col gap-1">
-                  <FiClock className="text-fuchsia-300" />
-                  <span className="text-white/80 font-medium">Avg. task time</span>
-                  <span className="text-white/60 text-xs">2.1x faster this week</span>
+              <div className="mt-10 grid grid-cols-2 gap-4 text-sm">
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-5 flex flex-col gap-2 backdrop-blur-sm">
+                  <div className="p-2 bg-white/20 rounded-lg w-fit">
+                    <FiClock className="text-white h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-white/90 font-semibold text-lg">2.1x</span>
+                    <span className="text-blue-100 text-xs">Faster task completion</span>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col gap-1">
-                  <FiTrendingUp className="text-sky-300" />
-                  <span className="text-white/80 font-medium">Team performance</span>
-                  <span className="text-white/60 text-xs">Up by 34%</span>
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-5 flex flex-col gap-2 backdrop-blur-sm">
+                  <div className="p-2 bg-white/20 rounded-lg w-fit">
+                    <FiTrendingUp className="text-emerald-300 h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="block text-white/90 font-semibold text-lg">+34%</span>
+                    <span className="text-blue-100 text-xs">Performance boost</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,19 +191,19 @@ export default function Signin() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mt-10 text-sm text-white/60"
+              className="relative z-10 mt-12 pt-8 border-t border-white/10 text-sm text-blue-100/70 italic"
             >
               “The best way to predict the future is to create it.” — Cyphire Labs
             </motion.div>
           </motion.div>
 
           {/* RIGHT side – Form */}
-          <div className="flex-1 p-8 lg:p-12 bg-[#070710]/80 flex items-center justify-center">
+          <div className="flex-1 p-8 lg:p-12 bg-white flex items-center justify-center">
             <div className="w-full max-w-md">
-              <div className="mb-6 text-center lg:text-left">
-                <h2 className="text-2xl md:text-3xl font-semibold">Sign in securely</h2>
-                <p className="text-white/60 mt-2">
-                  Your data is protected with enterprise-grade encryption.
+              <div className="mb-8 text-center lg:text-left">
+                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Sign in securely</h2>
+                <p className="text-slate-500 mt-2">
+                  To continue where you left off.
                 </p>
               </div>
 
@@ -205,30 +211,30 @@ export default function Signin() {
                 onClick={handleGoogle}
                 disabled={loading}
                 aria-label="Continue with Google"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium transition hover:bg-white/15 disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 hover:shadow-md disabled:opacity-60 shadow-sm"
               >
                 <FcGoogle size={22} />
                 {!loading && <span>Continue with Google</span>}
                 {loading && (
-                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/80 border-t-transparent" />
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
                 )}
               </button>
 
-              <div className="my-5 flex items-center gap-4 text-white/50">
-                <span className="h-px w-full bg-white/10" />
-                <span className="text-xs">or</span>
-                <span className="h-px w-full bg-white/10" />
+              <div className="my-6 flex items-center gap-4 text-slate-400">
+                <span className="h-px w-full bg-slate-200" />
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">or email</span>
+                <span className="h-px w-full bg-slate-200" />
               </div>
 
-              <form onSubmit={handleEmailSignin} noValidate className="space-y-4">
+              <form onSubmit={handleEmailSignin} noValidate className="space-y-5">
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="text-sm text-white/70">
-                    Email
+                  <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
+                    Email address
                   </label>
-                  <div className="relative mt-1">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">
-                      <FiMail />
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <FiMail className="h-5 w-5" />
                     </div>
                     <input
                       ref={emailRef}
@@ -242,27 +248,27 @@ export default function Signin() {
                       required
                       aria-invalid={!form.email}
                       aria-describedby="email_help"
-                      className="w-full rounded-lg border border-white/10 bg-black/30 px-10 py-3 outline-none ring-0 focus:border-fuchsia-400/40"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-11 py-3.5 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
                   </div>
-                  <div id="email_help" aria-live="polite" className="text-xs text-emerald-300 h-4">
+                  <div id="email_help" aria-live="polite" className="text-xs text-emerald-600 h-4 mt-1 font-medium ml-1">
                     {form.email && form.email.includes("@") ? "Looks good ✓" : ""}
                   </div>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="text-sm text-white/70">
+                  <div className="flex items-center justify-between mb-1.5 ml-1">
+                    <label htmlFor="password" className="text-sm font-semibold text-slate-700">
                       Password
                     </label>
                     {capsOn && (
-                      <span className="text-[11px] text-amber-300/90">Caps Lock is ON</span>
+                      <span className="text-[11px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Caps Lock ON</span>
                     )}
                   </div>
-                  <div className="relative mt-1">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">
-                      <FiLock />
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <FiLock className="h-5 w-5" />
                     </div>
                     <input
                       ref={pwdRef}
@@ -282,63 +288,58 @@ export default function Signin() {
                       autoComplete="current-password"
                       required
                       aria-invalid={!form.password}
-                      className="w-full rounded-lg border border-white/10 bg-black/30 px-10 py-3 outline-none ring-0 focus:border-fuchsia-400/40"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-11 py-3.5 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPwd((s) => !s)}
                       aria-label={showPwd ? "Hide password" : "Show password"}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
                     >
-                      {showPwd ? <FiEyeOff /> : <FiEye />}
+                      {showPwd ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
 
                 {/* Options */}
-                <div className="flex items-center justify-between pt-1">
-                  <label className="inline-flex items-center gap-2 text-sm text-white/70 cursor-pointer select-none">
+                <div className="flex items-center justify-between pt-2">
+                  <label className="inline-flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer select-none hover:text-slate-900 transition-colors">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
-                      className="h-4 w-4 rounded border-white/20 bg-black/30"
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-colors"
                     />
                     Remember me
                   </label>
-                  <Link
-                    to="/reset"
-                    className="text-sm text-white/60 hover:text-white/80"
-                  >
-                    Forgot password?
-                  </Link>
+                  <span className="text-sm text-slate-400">
+                    Password reset is temporarily unavailable
+                  </span>
                 </div>
 
                 {/* Submit */}
                 <motion.button
                   id="signinSubmitBtn"
-                  whileHover={{ scale: loading ? 1 : 1.02 }}
-                  whileTap={{ scale: loading ? 1 : 0.98 }}
+                  whileHover={{ scale: loading ? 1 : 1.01 }}
+                  whileTap={{ scale: loading ? 1 : 0.99 }}
                   disabled={loading}
                   type="submit"
-                  className="relative w-full overflow-hidden rounded-xl px-4 py-3 font-semibold disabled:opacity-60"
+                  className="relative w-full overflow-hidden rounded-xl bg-blue-600 px-6 py-4 font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-700 hover:shadow-blue-600/40 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
                 >
-                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-sky-600" />
-                  <span className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-400/40 via-fuchsia-400/30 to-sky-400/30 blur-md" />
-                  <span className="relative inline-flex items-center justify-center gap-2">
+                  <span className="relative inline-flex items-center justify-center gap-2 text-base">
                     {loading && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/80 border-t-transparent" />
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/80 border-t-transparent" />
                     )}
-                    {loading ? "Signing in…" : "Sign in"}
+                    {loading ? "Signing in…" : "Sign In"}
                   </span>
                 </motion.button>
               </form>
 
-              <div className="mt-5 text-center text-sm text-white/70">
+              <div className="mt-8 text-center text-sm text-slate-500">
                 New to Cyphire?{" "}
                 <Link
                   to="/signup"
-                  className="text-fuchsia-300 hover:text-fuchsia-200"
+                  className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
                 >
                   Create an account
                 </Link>
@@ -355,13 +356,13 @@ export default function Signin() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+            className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-50"
             role="status"
             aria-live="polite"
           >
             <div className="text-center">
-              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
-              <div className="text-white/90">Authenticating…</div>
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              <div className="text-slate-900 font-medium text-lg">Authenticating…</div>
             </div>
           </motion.div>
         )}

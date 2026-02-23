@@ -2,8 +2,9 @@
 
 import mongoose from "mongoose";
 import Task from "../models/taskModel.js";
-import User from "../models/userModel.js";
+import PaymentVerification from "../models/paymentVerificationModel.js";
 import cloudinary from "../utils/cloudinary.js";
+import { getListingPaymentConfig, normalizeListingCategory } from "../utils/listingPayments.js";
 
 /* --------------------------- shared config/helpers -------------------------- */
 
@@ -87,20 +88,93 @@ export const createTask = async (req, res, next) => {
     if (!description || String(description).trim().length < 10)
       return res.status(400).json({ error: "Description must be at least 10 characters" });
 
+    const parsedCategory = Array.isArray(category) ? category.filter(Boolean) : [category].filter(Boolean);
+    const normalizedCategory = normalizeListingCategory(parsedCategory);
+
+    let parsedMetadata = {};
+    if (typeof metadata === "string") {
+      try {
+        parsedMetadata = JSON.parse(metadata || "{}") || {};
+      } catch {
+        return res.status(400).json({ error: "Invalid metadata JSON" });
+      }
+    } else if (metadata && typeof metadata === "object") {
+      parsedMetadata = metadata;
+    }
+
+    // Paid listing enforcement (currently for sponsorship boosts/premium).
+    // Client must provide a fresh `paymentVerificationId` for paid listing plans.
+    const fallbackPlanFromTier =
+      String(parsedMetadata?.tier || "").toLowerCase() === "premium" ? "premium" : "";
+    const requestedListingPlan = String(
+      parsedMetadata?.listingPlan || fallbackPlanFromTier
+    ).toLowerCase();
+    const listingPaymentConfig = getListingPaymentConfig(normalizedCategory, requestedListingPlan);
+    const paymentVerificationId = String(parsedMetadata?.paymentVerificationId || "").trim();
+
+    if (
+      requestedListingPlan &&
+      !listingPaymentConfig &&
+      ["premium", "basic_boost"].includes(requestedListingPlan)
+    ) {
+      return res.status(400).json({ error: "Unsupported paid listing plan for this category" });
+    }
+
+    if (listingPaymentConfig) {
+      if (!isObjectId(paymentVerificationId)) {
+        return res.status(400).json({ error: "Paid listing requires a valid payment verification id" });
+      }
+
+      const verification = await PaymentVerification.findOne({
+        _id: paymentVerificationId,
+        user: userId,
+        purpose: listingPaymentConfig.purpose,
+        consumedAt: null,
+        consumedByTask: null,
+      }).select("_id amount currency");
+
+      if (!verification) {
+        return res.status(403).json({ error: "Listing payment verification not found or already used" });
+      }
+
+      const expectedAmount = listingPaymentConfig.amountInr * 100;
+      if (
+        Number(verification.amount) !== expectedAmount ||
+        String(verification.currency || "").toUpperCase() !== "INR"
+      ) {
+        return res.status(400).json({ error: "Listing payment verification amount mismatch" });
+      }
+    }
+
+    const metadataForStorage = { ...(parsedMetadata || {}) };
+    delete metadataForStorage.paymentVerificationId;
+    if (requestedListingPlan) {
+      metadataForStorage.listingPlan = requestedListingPlan;
+    }
+
     const attachmentsFiles = req.files?.attachments || [];
     const logoFile = Array.isArray(req.files?.logo) ? req.files.logo[0] : null;
+    const paymentQrFile = Array.isArray(req.files?.paymentQr) ? req.files.paymentQr[0] : null;
 
     const uploadedAttachments = await uploadAttachments(attachmentsFiles, "cyphire/tasks");
     const uploadedLogo = logoFile ? await uploadToCloudinary(logoFile, "cyphire/tasks/logo") : null;
+    const uploadedPaymentQr = paymentQrFile
+      ? await uploadToCloudinary(paymentQrFile, "cyphire/tasks/payment")
+      : null;
+
+    if (uploadedPaymentQr?.secure_url) {
+      metadataForStorage.paymentQrUrl = uploadedPaymentQr.secure_url;
+      metadataForStorage.paymentQrPublicId = uploadedPaymentQr.public_id;
+    }
 
     const doc = {
       title: String(title).trim(),
       description: String(description).trim(),
-      category: Array.isArray(category) ? category.filter(Boolean) : [category].filter(Boolean),
+      category: parsedCategory,
       price: price != null ? Number(price) : undefined,
       numberOfApplicants: numberOfApplicants != null ? Number(numberOfApplicants) : undefined,
       deadline: deadline ? new Date(deadline) : undefined,
-      metadata: typeof metadata === "string" ? (JSON.parse(metadata || "{}") || {}) : (metadata || {}),
+      metadata: metadataForStorage,
       attachments: uploadedAttachments,
       logo: uploadedLogo?.secure_url
         ? { url: uploadedLogo.secure_url, public_id: uploadedLogo.public_id }
@@ -112,6 +186,35 @@ export const createTask = async (req, res, next) => {
     };
 
     const task = await Task.create(doc);
+
+    if (listingPaymentConfig) {
+      const consumed = await PaymentVerification.findOneAndUpdate(
+        {
+          _id: paymentVerificationId,
+          user: userId,
+          purpose: listingPaymentConfig.purpose,
+          consumedAt: null,
+          consumedByTask: null,
+        },
+        {
+          $set: {
+            consumedAt: new Date(),
+            consumedByTask: task._id,
+          },
+        },
+        { new: true }
+      );
+
+      if (!consumed) {
+        try {
+          await Task.findByIdAndDelete(task._id);
+        } catch (rollbackErr) {
+          logger.error("Failed to rollback task after payment verification race", rollbackErr);
+        }
+        return res.status(409).json({ error: "Listing payment verification already used" });
+      }
+    }
+
     const populated = await populateTaskById(task._id);
 
     logger.info("Task created", { taskId: String(task._id), by: String(userId) });
@@ -360,6 +463,7 @@ export const updateTask = async (req, res, next) => {
     // optional: replace media
     const attachmentsFiles = req.files?.attachments || [];
     const logoFile = Array.isArray(req.files?.logo) ? req.files.logo[0] : null;
+    const paymentQrFile = Array.isArray(req.files?.paymentQr) ? req.files.paymentQr[0] : null;
 
     if (attachmentsFiles.length) {
       task.attachments = await uploadAttachments(attachmentsFiles, "cyphire/tasks");
@@ -367,6 +471,14 @@ export const updateTask = async (req, res, next) => {
     if (logoFile) {
       const up = await uploadToCloudinary(logoFile, "cyphire/tasks/logo");
       task.logo = up?.secure_url ? { url: up.secure_url, public_id: up.public_id } : undefined;
+    }
+    if (paymentQrFile) {
+      const up = await uploadToCloudinary(paymentQrFile, "cyphire/tasks/payment");
+      if (!task.metadata || typeof task.metadata !== "object") task.metadata = {};
+      if (up?.secure_url) {
+        task.metadata.paymentQrUrl = up.secure_url;
+        task.metadata.paymentQrPublicId = up.public_id;
+      }
     }
 
     await task.save();

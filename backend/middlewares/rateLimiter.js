@@ -10,7 +10,7 @@ const redisClient = process.env.REDIS_URL
   : null;
 
 function compositeKey(req) {
-  const ip = ipKeyGenerator(req); // Secure for IPv6/IPv4
+  const ip = ipKeyGenerator(req.ip); // IPv6-safe normalization for client IP
   const dfp = req.headers["x-device-fingerprint"] || "dfp_na";
   const uid = req.user?.id || req.user?._id || "anon";
   return `${ip}:${dfp}:${uid}`;

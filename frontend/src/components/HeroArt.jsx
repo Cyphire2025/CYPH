@@ -108,14 +108,14 @@ export const SwipeCarousel = () => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[380px] sm:h-[420px] md:h-[480px] lg:h-[520px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_0_24px_rgba(139,92,246,0.25)] p-4 sm:p-5 md:p-6"
+      className="relative w-full h-[380px] sm:h-[420px] md:h-[480px] lg:h-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md p-4 sm:p-5 md:p-6"
     >
       {/* glow backdrop */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -inset-24 mix-blend-screen">
-          <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_20%_25%,rgba(168,45,152,0.10),transparent_45%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_80%_75%,rgba(14,165,233,0.10),transparent_45%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(700px_circle_at_50%_50%,rgba(236,72,153,0.08),transparent_52%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_20%_25%,rgba(16,185,129,0.05),transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_80%_75%,rgba(59,130,246,0.05),transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(700px_circle_at_50%_50%,rgba(16,185,129,0.03),transparent_52%)]" />
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export const SwipeCarousel = () => {
             <img
               src={src}
               alt=""
-              className="aspect-square w-[95%] h-[95%] rounded-xl object-cover shadow-[0_0_20px_rgba(255,255,255,0.08)] select-none"
+              className="aspect-square w-[95%] h-[95%] rounded-xl object-cover shadow-sm select-none border border-gray-100"
               draggable={false}
               loading="eager" // ✅ eager ensures no blank frame
             />
@@ -153,11 +153,10 @@ export const SwipeCarousel = () => {
           <button
             key={i}
             onClick={() => goTo(i)}
-            className={`h-2.5 w-2.5 rounded-full transition-all ${
-              i === index
-                ? "bg-fuchsia-400 shadow-[0_0_10px_rgba(236,72,153,0.9)] scale-110"
-                : "bg-white/30 hover:bg-white/60"
-            }`}
+            className={`h-2.5 w-2.5 rounded-full transition-all ${i === index
+                ? "bg-emerald-500 shadow-sm scale-110"
+                : "bg-gray-200 hover:bg-gray-300"
+              }`}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}
@@ -166,26 +165,26 @@ export const SwipeCarousel = () => {
       {/* arrows */}
       <button
         onClick={prev}
-        className="group absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border border-white/15 bg-white/10 backdrop-blur-md hover:bg-white/20 transition"
+        className="group absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border border-gray-100 bg-white/80 backdrop-blur-md hover:bg-white transition shadow-sm"
         aria-label="Previous image"
       >
-        <svg className="h-4 w-4 text-white/80 group-hover:text-white" viewBox="0 0 24 24" fill="none">
-          <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg className="h-4 w-4 text-gray-600 group-hover:text-emerald-600" viewBox="0 0 24 24" fill="none">
+          <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
       <button
         onClick={next}
-        className="group absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border border-white/15 bg-white/10 backdrop-blur-md hover:bg-white/20 transition"
+        className="group absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border border-gray-100 bg-white/80 backdrop-blur-md hover:bg-white transition shadow-sm"
         aria-label="Next image"
       >
-        <svg className="h-4 w-4 text-white/80 group-hover:text-white" viewBox="0 0 24 24" fill="none">
-          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg className="h-4 w-4 text-gray-600 group-hover:text-emerald-600" viewBox="0 0 24 24" fill="none">
+          <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
       {/* side fades */}
-      <div className="pointer-events-none absolute top-0 left-0 bottom-0 w-16 bg-gradient-to-r from-[#0a0a0f] via-[#0a0a0f]/40 to-transparent" />
-      <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-[#0a0a0f] via-[#0a0a0f]/40 to-transparent" />
+      <div className="pointer-events-none absolute top-0 left-0 bottom-0 w-16 bg-gradient-to-r from-white via-white/40 to-transparent" />
+      <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-white via-white/40 to-transparent" />
     </div>
   );
 };

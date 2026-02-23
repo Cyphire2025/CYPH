@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { motion as Motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
+import { format } from "date-fns";
 import {
   ArrowLeft,
   UploadCloud,
@@ -15,15 +14,24 @@ import {
   CircleDashed,
   Lightbulb,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2
 } from "lucide-react";
-import PostingOverlay from "../components/PostingOverlay";
+
 import { apiFetch } from "../lib/fetch";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
-const Calendar = React.lazy(() => import('@/components/ui/Cal'));
 const MAX_CATEGORIES = 5;
 const MAX_ATTACHMENTS = 5;
+
+// Shared Light Theme Components
+const GradientText = ({ children, className = "" }) => (
+  <span className={`text-blue-600 font-bold tracking-tight ${className}`}>
+    {children}
+  </span>
+);
 
 export default function EducationPostTask() {
   const navigate = useNavigate();
@@ -47,25 +55,12 @@ export default function EducationPostTask() {
   const [deadline, setDeadline] = useState(null)
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState(false);
-  const [particles, setParticles] = useState([]);
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [openDeadline, setOpenDeadline] = useState(false);
 
-
   const logoInputRef = useRef(null);
   const fileInputRef = useRef(null);
-
-
-  useEffect(() => {
-    const newParticles = Array.from({ length: 12 }).map(() => ({
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      size: `${Math.random() * 6 + 4}px`,
-      duration: `${Math.random() * 8 + 6}s`,
-    }));
-    setParticles(newParticles);
-  }, []);
 
   useEffect(() => {
     if (!logo) {
@@ -117,7 +112,6 @@ export default function EducationPostTask() {
       formData.append("price", price);
       if (deadline) formData.append("deadline", deadline.toISOString());
 
-      // --- FIX: Consolidate data structure ---
       formData.append("category", "Education"); // Main category
       // All other details go into metadata
       formData.append(
@@ -128,7 +122,6 @@ export default function EducationPostTask() {
         })
       );
 
-
       if (logo) formData.append("logo", logo);
       attachments.forEach((file) => formData.append("attachments", file));
 
@@ -136,7 +129,6 @@ export default function EducationPostTask() {
         method: "POST",
         body: formData,
       });
-
 
       if (res.ok) {
         setPosted(true);
@@ -199,405 +191,542 @@ export default function EducationPostTask() {
     : "No attachments yet";
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 text-white md:px-8">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 animate-gradient" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+    <div className="relative min-h-screen bg-slate-50 text-slate-900 py-10 px-4 md:px-8 font-sans">
+      {/* Background decoration */}
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-white to-transparent pointer-events-none -z-10" />
 
-      {particles.map((p, i) => (
-        <div
-          key={i}
-          className="hidden sm:block absolute rounded-full bg-purple-500/35 blur-md animate-float"
-          style={{
-            left: p.left,
-            top: p.top,
-            width: p.size,
-            height: p.size,
-            animationDuration: p.duration,
-          }}
-        />
-      ))}
-
-      <div className="relative z-10 w-full max-w-6xl scale-[1.0]">
-        <Motion.div
-          initial={{ opacity: 0, y: 36 }}
+      <div className="relative z-10 w-full max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#141414]/85 p-6 shadow-[0_35px_120px_rgba(129,17,188,0.35)] backdrop-blur-2xl sm:p-8 md:p-10"
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-slate-200"
         >
-          <div className="absolute -right-20 top-0 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-pink-500/10 blur-3xl" />
-
-          <div className="relative grid gap-10 md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)]">
+          <div className="relative grid gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <section className="space-y-8">
               <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <Motion.h1
-                    initial={{ opacity: 0, y: -12 }}
+                  <motion.h1
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15, duration: 0.45 }}
-                    className="bg-gradient-to-r from-pink-400 via-purple-300 to-purple-100 bg-clip-text text-3xl font-semibold text-transparent sm:text-4xl"
+                    className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight"
                   >
-                    Post Education Task
-                  </Motion.h1>
-                  <p className="mt-3 text-sm text-gray-200/80 sm:text-base">
+                    Post <GradientText>Education Task</GradientText>
+                  </motion.h1>
+                  <p className="mt-2 text-slate-600 text-lg">
                     Share a polished learning brief and match with top educators fast.
-                  </p>
-                  <p className="mt-5 text-xs uppercase tracking-[0.35em] text-purple-200/70">
-                    Step 1 of 3 | Learning Brief
                   </p>
                 </div>
 
-                <Motion.button
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
+                <motion.button
+                  whileHover={{ x: -4 }}
                   onClick={() => navigate("/choose-category")}
-                  className="group flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition hover:border-purple-300/60 hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200"
                 >
-                  <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
+                  <ArrowLeft className="h-4 w-4" />
                   Back
-                </Motion.button>
+                </motion.button>
               </div>
 
-              <div>
-                <p className="mb-2 text-sm font-medium text-gray-200">Hero Image</p>
-                <Motion.div
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => logoInputRef.current?.click()}
-                  className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-8 text-center transition focus-within:border-purple-400/60 focus-within:bg-white/10 hover:border-purple-300/70 hover:bg-white/10"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20 text-purple-100 group-hover:bg-purple-500/30">
-                    <UploadCloud className="h-6 w-6" />
-                  </div>
-                  <p className="mt-4 text-sm font-medium text-white">Upload a cover image</p>
-                  <p className="mt-1 text-xs text-gray-400">PNG or JPG | Up to 5MB</p>
-                  <input
-                    ref={logoInputRef}
-                    id="logoInput"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
-                    className="hidden"
-                  />
-                </Motion.div>
-                {logoPreview && (
-                  <Motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
+              {/* Hero Image */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-700">Hero Image</label>
+                {!logoPreview ? (
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => logoInputRef.current?.click()}
+                    className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-blue-400 hover:bg-blue-50/50"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 group-hover:scale-110 transition-transform">
+                      <UploadCloud className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900">Upload a cover image</p>
+                    <p className="text-xs text-slate-500 mt-1">PNG or JPG | Up to 5MB</p>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
+                      className="hidden"
+                    />
+                  </motion.div>
+                ) : (
+                  <div className="relative rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
                       <img
                         src={logoPreview}
-                        alt="Selected cover"
-                        className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/10"
+                        alt="Preview"
+                        className="h-16 w-16 rounded-lg object-cover border border-slate-200"
                       />
                       <div>
-                        <p className="text-sm font-medium text-white/90">{logo?.name}</p>
-                        <p className="text-xs text-gray-400">Ready to inspire learners</p>
+                        <p className="text-sm font-medium text-slate-900">{logo?.name}</p>
+                        <p className="text-xs text-slate-500">Ready to inspire</p>
                       </div>
                     </div>
                     <button
-                      type="button"
                       onClick={() => setLogo(null)}
-                      className="text-white/60 transition hover:text-red-300"
+                      className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                     >
                       <XCircle className="h-5 w-5" />
                     </button>
-                  </Motion.div>
+                  </div>
                 )}
               </div>
 
               <div className="space-y-6">
-                <div className="relative">
+                <div>
+                  <label htmlFor="taskTitle" className="block text-sm font-medium text-slate-700 mb-1">
+                    Task Title
+                  </label>
                   <input
                     id="taskTitle"
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Your task title"
-                    className="peer block w-full rounded-2xl border border-white/12 bg-white/5 px-5 pt-7 pb-3 text-[15px] leading-relaxed text-white placeholder-transparent shadow-inner shadow-black/10 transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+                    placeholder="e.g. Create Grade 10 Math Quiz"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   />
-                  <label
-                    htmlFor="taskTitle"
-                    className="pointer-events-none absolute left-5 top-3 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-200 transition-all duration-200 peer-placeholder-shown:top-6 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-[11px] peer-focus:text-purple-100"
-                  >
-                    Title
-                  </label>
-                  <p className="mt-2 text-xs text-gray-400">Capture the project in one punchy sentence.</p>
+                  <p className="mt-1.5 text-xs text-slate-500">Capture the project in one punchy sentence.</p>
                 </div>
-                <div className="relative">
+
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-1">
+                    Subject
+                  </label>
                   <input
                     id="subject"
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Subject or focus area"
-                    className="peer block w-full rounded-2xl border border-white/12 bg-white/5 px-5 pt-7 pb-3 text-[15px] leading-relaxed text-white placeholder-transparent shadow-inner shadow-black/10 transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   />
-                  <label
-                    htmlFor="subject"
-                    className="pointer-events-none absolute left-5 top-3 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-200 transition-all duration-200 peer-placeholder-shown:top-6 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-[11px] peer-focus:text-purple-100"
-                  >
-                    Subject
-                  </label>
-                  <p className="mt-2 text-xs text-gray-400">Call out the topic, level, or audience for this content.</p>
+                  <p className="mt-1.5 text-xs text-slate-500">Call out the topic, level, or audience for this content.</p>
                 </div>
 
-
-                <div className="relative">
+                <div>
+                  <label htmlFor="taskDescription" className="block text-sm font-medium text-slate-700 mb-1">
+                    Description
+                  </label>
                   <textarea
                     id="taskDescription"
                     rows={5}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the deliverables, tone, tech stack, success metrics..."
-                    className="peer block w-full resize-none rounded-2xl border border-white/12 bg-white/5 px-5 pt-7 pb-3 text-[15px] leading-relaxed text-white placeholder-transparent shadow-inner shadow-black/10 transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
                   />
-                  <label
-                    htmlFor="taskDescription"
-                    className="pointer-events-none absolute left-5 top-3 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-200 transition-all duration-200 peer-placeholder-shown:top-6 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-[11px] peer-focus:text-purple-100"
-                  >
-                    Description
-                  </label>
-                  <p className="mt-2 text-xs text-gray-400">Outline deliverables, context, and what success looks like.</p>
+                  <p className="mt-1.5 text-xs text-slate-500">Outline deliverables, context, and what success looks like.</p>
                 </div>
               </div>
 
               <div>
-                <p className="mb-3 text-sm font-medium text-gray-200">Deliverables</p>
+                <label className="block text-sm font-medium text-slate-700 mb-3">Deliverables</label>
                 <div className="flex flex-wrap gap-3">
                   {categories.map((cat) => {
                     const selected = selectedCategories.includes(cat);
                     const disabled = !selected && selectedCategories.length >= MAX_CATEGORIES;
-                    const chipClasses = [
-                      "relative flex select-none items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
-                      selected
-                        ? "border-transparent bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/40"
-                        : "border-white/15 bg-white/5 text-gray-200/90 hover:border-purple-300/60 hover:bg-white/10",
-                      disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
-                    ].join(" ");
 
                     return (
-                      <Motion.button
+                      <button
                         key={cat}
                         type="button"
-                        layout
                         disabled={disabled}
-                        aria-pressed={selected}
-                        whileTap={!disabled ? { scale: 0.95 } : undefined}
-                        whileHover={!disabled ? { scale: 1.03 } : undefined}
-                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
                         onClick={() => !disabled && handleCategoryClick(cat)}
-                        className={chipClasses}
+                        className={`
+                          flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all
+                          ${selected
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                          }
+                          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                        `}
                       >
-                        <Sparkles className="h-4 w-4 opacity-70" />
+                        <Sparkles className={`h-3.5 w-3.5 ${selected ? "text-blue-200" : "text-slate-400"}`} />
                         {cat}
-                      </Motion.button>
+                      </button>
                     );
                   })}
                 </div>
-                <p className="mt-3 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-slate-500">
                   Select up to {MAX_CATEGORIES} deliverables to shape the engagement.
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                <div className="relative">
-                  <Users className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-200/70" />
-                  <input id="applicants" type="number" inputMode="numeric" min="1" value={numApplicants} onChange={(e) => setNumApplicants(e.target.value)} placeholder="e.g., 5" className="peer block w-full rounded-2xl border border-white/12 bg-white/5 px-12 pt-8 pb-3 text-[15px] text-white placeholder-transparent transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                  <label htmlFor="applicants" className="pointer-events-none absolute left-12 top-3 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-200 transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-xs peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-[11px] peer-focus:text-purple-100">Max Applicants</label>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <div>
+                  <label htmlFor="applicants" className="block text-sm font-medium text-slate-700 mb-1">Max Applicants</label>
+                  <div className="relative">
+                    <Users className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <input
+                      id="applicants"
+                      type="number"
+                      min="1"
+                      value={numApplicants}
+                      onChange={(e) => setNumApplicants(e.target.value)}
+                      placeholder="0"
+                      className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Wallet className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-200/70" />
-                  <input id="price" type="number" inputMode="decimal" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g., 5000" className="peer block w-full rounded-2xl border border-white/12 bg-white/5 px-12 pt-8 pb-3 text-[15px] text-white placeholder-transparent transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                  <label htmlFor="price" className="pointer-events-none absolute left-12 top-3 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-200 transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-xs peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-[11px] peer-focus:text-purple-100">Budget (₹)</label>
+                <div>
+                  <label htmlFor="price" className="block text-sm font-medium text-slate-700 mb-1">Budget (₹)</label>
+                  <div className="relative">
+                    <Wallet className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <input
+                      id="price"
+                      type="number"
+                      min="0"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0"
+                      className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
+                    />
+                  </div>
                 </div>
-                <div className="relative min-w-[170px] group">
-                  <Popover open={openDeadline} onOpenChange={setOpenDeadline}>
-                    <PopoverTrigger asChild>
-                      <div className="relative w-full">
-                        <CalendarDays className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-200/70" />
-                        <div
-                          tabIndex={0}
-                          className="peer block w-full cursor-pointer rounded-2xl border border-white/12 bg-white/5 px-12 pt-8 pb-3 text-[15px] leading-relaxed text-white transition focus:border-pink-300/70 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Deadline</label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <button
+                      type="button"
+                      onClick={() => setOpenDeadline(!openDeadline)}
+                      className={`w-full rounded-xl border px-3 pl-10 py-2.5 text-left text-sm transition-all outline-none focus:ring-4 focus:ring-blue-500/10
+                        ${deadline ? "bg-white border-slate-200 text-slate-900 font-medium" : "bg-white border-slate-200 text-slate-500"}
+                         ${openDeadline ? "border-blue-500 ring-4 ring-blue-500/10" : ""}
+                       `}
+                    >
+                      {deadline ? format(deadline, "PP") : "Select date"}
+                    </button>
+
+                    <AnimatePresence>
+                      {openDeadline && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="absolute top-full left-0 mt-2 z-50 rounded-xl bg-white p-4 shadow-xl border border-slate-100 w-[280px]"
                         >
-                          {deadline ? (<span className="whitespace-nowrap text-white">{format(deadline, "PP")}</span>) : (<span className="text-transparent">-</span>)}
-                        </div>
-                        <label className={`pointer-events-none absolute left-12 text-[11px] font-medium uppercase tracking-[0.18em] transition-all duration-200 ${deadline ? "top-3 text-purple-200" : "top-1/2 -translate-y-1/2 text-xs text-gray-400"}`}>Deadline</label>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-[#141414] border border-white/10 rounded-xl shadow-xl">
-                      <React.Suspense fallback={<div>Loading...</div>}>
-                        <Calendar
-                          mode="single"
-                          selected={deadline}
-                          onSelect={(date) => { setDeadline(date); setOpenDeadline(false); }}
-                          fromDate={new Date()}
-                          className="rounded-md border-none text-white"
-                        />
-                      </React.Suspense>
-                    </PopoverContent>
-                  </Popover>
+                          <SimpleCalendar
+                            selected={deadline}
+                            onSelect={(date) => {
+                              setDeadline(date);
+                              setOpenDeadline(false);
+                            }}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-3 text-sm font-medium text-gray-200">
-                  Attachments <span className="text-xs text-gray-400">(Optional)</span>
-                </p>
-                <Motion.div
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-8 text-center transition focus-within:border-purple-400/60 focus-within:bg-white/10 hover:border-purple-300/70 hover:bg-white/10"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-purple-100 group-hover:bg-purple-500/30">
-                    <UploadCloud className="h-5 w-5" />
-                  </div>
-                  <p className="mt-3 text-sm font-medium text-white">Drop files or click to browse</p>
-                  <p className="mt-1 text-xs text-gray-400">Up to {MAX_ATTACHMENTS} files · PDF, ZIP, Figma, Docs</p>
-                  <input
-                    ref={fileInputRef}
-                    id="fileInput"
-                    type="file"
-                    multiple
-                    onChange={handleAttachmentChange}
-                    className="hidden"
-                  />
-                </Motion.div>
-                <AnimatePresence>
-                  {attachments.length > 0 && (
-                    <Motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 12 }}
-                      className="mt-4 flex flex-wrap gap-3"
-                    >
-                      {attachments.map((file, index) => (
-                        <Motion.div
-                          key={`${file.name}-${index}`}
-                          layout
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
-                        >
-                          <span className="max-w-[150px] truncate">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(index)}
-                            className="text-white/60 transition hover:text-red-300"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </Motion.div>
-                      ))}
-                    </Motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <Motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                className="sticky bottom-4 w-full rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 px-6 py-3 text-lg font-semibold shadow-[0_20px_60px_rgba(129,17,188,0.35)] transition hover:shadow-[0_25px_70px_rgba(129,17,188,0.45)] focus:outline-none focus:ring-4 focus:ring-purple-400/40"
-                onClick={handleSubmit}
-                disabled={posting}
-              >
-                {posting ? 'Posting...' : 'Post Task'}
-              </Motion.button>
-            </section>
-
-            <aside className="relative mt-2 hidden md:block space-y-6 rounded-3xl border border-white/10 bg-white/5 px-6 py-8 shadow-[0_25px_80px_rgba(15,15,35,0.45)] backdrop-blur-xl sm:px-7 sm:py-10">
-              <div className="absolute -top-20 right-4 h-40 w-40 rounded-full bg-gradient-to-tr from-purple-500/35 via-pink-400/25 to-transparent blur-3xl" />
-              <div className="relative space-y-6 text-sm text-white/90">
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-purple-200/80">Snapshot</p>
-                    </div>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-purple-100">
-                      {readinessScore}% ready
-                    </span>
-                  </div>
-                  <dl className="mt-4 space-y-3 text-sm">
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-gray-400">Title</dt>
-                      <dd className="text-white/90">{title.trim() || "Title coming soon"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-gray-400">Subject</dt>
-                      <dd className="text-white/90">{subject.trim() || "Add subject focus"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-gray-400">Deliverables</dt>
-                      <dd className="text-white/90">{categoriesSummary}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-gray-400">Attachments</dt>
-                      <dd className="text-white/90">{attachmentsSummary}</dd>
-                    </div>
-                  </dl>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-slate-700">Attachments</label>
+                  <span className="text-xs text-slate-400">Optional</span>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/25 p-5">
-                  <p className="text-xs uppercase tracking-[0.3em] text-purple-200/80">Launch checklist</p>
-                  <ul className="mt-4 space-y-3 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+                  >
+                    <div className="p-2 bg-white rounded-full shadow-sm mb-2">
+                      <UploadCloud className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-700">Add files</p>
+                    <p className="text-xs text-slate-400 mt-1">PDF, ZIP, Docs</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleAttachmentChange}
+                      className="hidden"
+                    />
+                  </motion.div>
+
+                  <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                    {attachments.length === 0 && (
+                      <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">
+                        No attachments yet
+                      </div>
+                    )}
+                    <AnimatePresence>
+                      {attachments.map((file, index) => (
+                        <motion.div
+                          key={`${file.name}-${index}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, width: 0 }}
+                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100"
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <div className="p-1.5 bg-white rounded shadow-sm text-blue-600">
+                              <CheckCircle className="h-3 w-3" />
+                            </div>
+                            <span className="text-sm text-slate-700 truncate max-w-[120px]">{file.name}</span>
+                          </div>
+                          <button onClick={() => removeAttachment(index)} className="text-slate-400 hover:text-red-500">
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  className="w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                  onClick={handleSubmit}
+                  disabled={posting}
+                >
+                  {posting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Publishing Task...
+                    </span>
+                  ) : (
+                    "Post Task"
+                  )}
+                </button>
+              </div>
+            </section>
+
+            <aside className="hidden lg:block">
+              <div className="sticky top-10 space-y-6">
+                {/* Snapshot */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Snapshot</h3>
+                    <span className={`px-2 py-1 rounded-md text-xs font-semibold ${readinessScore === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {readinessScore}% Ready
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">Title</p>
+                      <p className={`text-sm ${title ? "text-slate-900 font-medium" : "text-slate-400 italic"}`}>
+                        {title || "Untitled Task"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">Subject</p>
+                      <p className={`text-sm ${subject ? "text-slate-900 font-medium" : "text-slate-400 italic"}`}>
+                        {subject || "Add subject focus"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">Deliverables</p>
+                      <p className={`text-sm ${selectedCategories.length ? "text-slate-900 font-medium" : "text-slate-400 italic"}`}>
+                        {categoriesSummary}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Checklist */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Launch Checklist</h3>
+                  <ul className="space-y-4">
                     {essentials.map((item) => (
-                      <li key={item.id} className="flex items-start gap-3">
+                      <li key={item.id} className="flex gap-3">
                         {item.complete ? (
-                          <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" />
+                          <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                         ) : (
-                          <CircleDashed className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-200/70" />
+                          <CircleDashed className="h-5 w-5 text-slate-300 flex-shrink-0" />
                         )}
                         <div>
-                          <p className="font-medium text-white/90">{item.label}</p>
-                          <p className="text-xs text-gray-400">{item.hint}</p>
+                          <p className={`text-sm font-medium ${item.complete ? "text-slate-900" : "text-slate-600"}`}>
+                            {item.label}
+                          </p>
+                          <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{item.hint}</p>
                         </div>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-white/10 p-2">
-                      <Lightbulb className="h-5 w-5 text-purple-100" />
+                {/* Pro Tip */}
+                <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 p-5">
+                  <div className="flex gap-3">
+                    <div className="p-2 bg-white rounded-lg shadow-sm h-fit">
+                      <Lightbulb className="h-4 w-4 text-amber-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">Pro tip</p>
-                      <p className="text-xs text-gray-300">
+                      <h4 className="text-sm font-bold text-slate-900">Pro Tip</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                         Link rubrics, exemplar lessons, or resources so educators can align quickly.
                       </p>
                     </div>
                   </div>
                   <a
-                    href="https://help.withbriefs.com/sample-task"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:border-purple-300/60 hover:bg-white/10"
+                    href="#"
+                    className="mt-4 block w-full rounded-lg bg-white border border-blue-200 px-3 py-2 text-center text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
                   >
-                    View sample brief
-                    <ArrowUpRight className="h-4 w-4" />
+                    View Sample Brief <ArrowUpRight className="inline h-3 w-3 ml-1" />
                   </a>
                 </div>
               </div>
             </aside>
           </div>
-        </Motion.div>
+        </motion.div>
       </div>
 
-      <PostingOverlay posting={posting} posted={posted} redirectTo="Tasks" />
+      {/* Posting Overlay */}
+      <AnimatePresence>
+        {(posting || posted) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="rounded-3xl bg-white p-12 text-center shadow-2xl max-w-sm w-full mx-4"
+            >
+              {posting && !posted && (
+                <>
+                  <Loader2 className="h-16 w-16 text-blue-600 animate-spin mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Publishing...</h3>
+                  <p className="text-slate-500">We're pushing your brief live.</p>
+                </>
+              )}
 
-      <style>{`
-        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .animate-gradient { background-size: 220% 220%; animation: gradient 16s ease infinite; }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-16px); } 100% { transform: translateY(0px); } }
-        .animate-float { animation: float infinite ease-in-out; }
-      `}</style>
+              {posted && (
+                <>
+                  <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Success!</h3>
+                  <p className="text-slate-500">Redirecting to task board...</p>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Simple inline calendar component
+function SimpleCalendar({ selected, onSelect }) {
+  const [currentMonth, setCurrentMonth] = useState(selected || new Date());
+
+  const daysInMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1,
+    0
+  ).getDate();
+
+  const firstDayOfMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    1
+  ).getDay();
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const days = [];
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const isSelected = (day) => {
+    if (!selected) return false;
+    return (
+      selected.getDate() === day &&
+      selected.getMonth() === currentMonth.getMonth() &&
+      selected.getFullYear() === currentMonth.getFullYear()
+    );
+  };
+
+  const isPast = (day) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    return checkDate < today;
+  };
+
+  return (
+    <div className="w-full text-slate-800">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="font-semibold text-sm">
+          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </div>
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className="p-1 rounded hover:bg-slate-100 text-slate-500 transition-colors"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+          <div key={day} className="text-center text-xs font-semibold text-slate-400 py-1">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, index) => (
+          <div key={index} className="aspect-square">
+            {day ? (
+              <button
+                type="button"
+                disabled={isPast(day)}
+                onClick={() => {
+                  if (!isPast(day)) {
+                    onSelect(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+                  }
+                }}
+                className={`w-full h-full rounded-md text-sm flex items-center justify-center transition-all ${isSelected(day)
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30"
+                  : isPast(day)
+                    ? "text-slate-300 cursor-not-allowed"
+                    : "text-slate-700 hover:bg-blue-50 hover:text-blue-600"
+                  }`}
+              >
+                {day}
+              </button>
+            ) : (
+              <div />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

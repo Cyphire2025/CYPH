@@ -3,7 +3,7 @@
 // Premium immersive design: Aurora, Particles, Framer Motion, GlassCard, GradientText, NeonButton
 // Sections: Hero, Principles, For Clients, For Freelancers, Escrow Flow, Rules, Disputes, FAQ, Global, CTA
 
-import React, { Suspense, useState,useMemo } from "react";
+import React, { Suspense, useState, useMemo } from "react";
 import NavbarSpon from "../components/navbarsponhome.jsx";
 import NavbarHome from "../components/navbarhome.jsx";
 import Footer from "../components/footer";
@@ -33,19 +33,19 @@ import {
 
 /* ========== Backgrounds ========== */
 const Aurora = () => (
-  <div className="absolute inset-0 -z-10 overflow-hidden">
-    <div className="absolute -inset-x-40 -top-40 h-[50rem] bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15),transparent_60%)]" />
-    <div className="absolute -inset-x-20 -top-20 h-[50rem] bg-[radial-gradient(ellipse_at_center,rgba(236,72,153,0.12),transparent_60%)]" />
-    <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.12),transparent_60%)]" />
+  <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div className="absolute -inset-x-40 -top-40 h-[50rem] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.05),transparent_60%)]" />
+    <div className="absolute -inset-x-20 -top-20 h-[50rem] bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05),transparent_60%)]" />
+    <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.05),transparent_60%)]" />
   </div>
 );
 
 const Particles = () => (
   <div className="pointer-events-none absolute inset-0 -z-10">
-    {Array.from({ length: 50 }).map((_, i) => (
+    {Array.from({ length: 40 }).map((_, i) => (
       <span
         key={i}
-        className="absolute h-1 w-1 rounded-full bg-white/40 shadow-[0_0_12px_rgba(255,255,255,0.35)]"
+        className="absolute h-1 w-1 rounded-full bg-slate-300/40"
         style={{
           left: `${Math.random() * 100}%`,
           top: `${Math.random() * 100}%`,
@@ -167,12 +167,12 @@ const faqs = [
 export default function EscrowPolicy() {
   const [openFAQ, setOpenFAQ] = useState(null);
   const Nav = useMemo(() => {
-  const last = sessionStorage.getItem("lastHomeRoute");
-  return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
-}, []);
+    const last = sessionStorage.getItem("lastHomeRoute");
+    return last === "/sponsorshiphome" ? NavbarSpon : NavbarHome;
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0c0c14] to-[#000] text-gray-100 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden font-sans">
       <main className="relative overflow-hidden">
         <Suspense fallback={<div className="text-center p-6">Loading...</div>}>
           <Nav />
@@ -186,13 +186,13 @@ export default function EscrowPolicy() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="text-4xl font-bold sm:text-5xl md:text-6xl"
+            className="text-4xl font-bold sm:text-5xl md:text-6xl text-slate-900 tracking-tight"
           >
             <GradientText>Escrow Policy</GradientText>
           </motion.h1>
           <motion.p
             {...fadeUp(0.2)}
-            className="mx-auto mt-6 max-w-2xl text-lg text-white/70"
+            className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 leading-relaxed"
           >
             At Cyphire, escrow isn’t just a feature — it’s the backbone of trust
             that ensures clients and freelancers collaborate with confidence.
@@ -202,24 +202,24 @@ export default function EscrowPolicy() {
         {/* PRINCIPLES */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Our Principles</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               These pillars define how our escrow works to protect everyone.
             </p>
           </header>
           <div className="grid gap-8 md:grid-cols-4">
             {principles.map((p, i) => (
               <motion.div key={i} {...fadeUp(i * 0.15)}>
-                <GlassCard className="p-8 h-full transition hover:scale-[1.03] text-center">
-                  <div className="mb-4 flex justify-center text-fuchsia-300">
+                <GlassCard className="p-8 h-full transition hover:scale-[1.03] text-center border-slate-200 bg-white shadow-md hover:shadow-lg">
+                  <div className="mb-4 flex justify-center text-blue-600">
                     {p.icon}
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
                     {p.title}
                   </h3>
-                  <p className="text-sm text-white/70">{p.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{p.desc}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -229,16 +229,16 @@ export default function EscrowPolicy() {
         {/* CLIENT PROTECTION */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-10">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Protection for Clients</GradientText>
             </h2>
           </header>
           <div className="grid gap-6 md:grid-cols-2">
             {clientPoints.map((pt, i) => (
               <motion.div key={i} {...fadeUp(i * 0.15)}>
-                <GlassCard className="p-6 flex gap-3 items-start">
-                  <ShieldCheck className="h-5 w-5 text-fuchsia-300 mt-1" />
-                  <p className="text-white/80 text-sm">{pt}</p>
+                <GlassCard className="p-6 flex gap-3 items-start border-slate-200 bg-white shadow-sm hover:border-blue-200 transition">
+                  <ShieldCheck className="h-5 w-5 text-blue-500 mt-1" />
+                  <p className="text-slate-700 text-sm font-medium">{pt}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -248,16 +248,16 @@ export default function EscrowPolicy() {
         {/* FREELANCER PROTECTION */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-10">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Protection for Freelancers</GradientText>
             </h2>
           </header>
           <div className="grid gap-6 md:grid-cols-2">
             {freelancerPoints.map((pt, i) => (
               <motion.div key={i} {...fadeUp(i * 0.15)}>
-                <GlassCard className="p-6 flex gap-3 items-start">
-                  <ShieldCheck className="h-5 w-5 text-fuchsia-300 mt-1" />
-                  <p className="text-white/80 text-sm">{pt}</p>
+                <GlassCard className="p-6 flex gap-3 items-start border-slate-200 bg-white shadow-sm hover:border-blue-200 transition">
+                  <ShieldCheck className="h-5 w-5 text-blue-500 mt-1" />
+                  <p className="text-slate-700 text-sm font-medium">{pt}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -267,28 +267,28 @@ export default function EscrowPolicy() {
         {/* ESCROW FLOW */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-14">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>The Escrow Flow</GradientText>
             </h2>
-            <p className="mt-3 text-white/70">
+            <p className="mt-3 text-slate-600">
               Step-by-step, here’s how every project is safeguarded.
             </p>
           </header>
-          <div className="relative border-l border-white/10 pl-10 space-y-12">
+          <div className="relative border-l border-slate-200 pl-10 space-y-12">
             {escrowFlow.map((step, i) => (
               <motion.div
                 key={i}
                 {...fadeUp(i * 0.15)}
                 className="relative flex items-start"
               >
-                <div className="absolute -left-6 top-1 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-fuchsia-300 shadow-md">
+                <div className="absolute -left-6 top-1 flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600 shadow-sm">
                   {step.icon}
                 </div>
                 <div className="ml-8">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {step.title}
                   </h3>
-                  <p className="mt-2 text-sm text-white/70">{step.desc}</p>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">{step.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -298,16 +298,16 @@ export default function EscrowPolicy() {
         {/* RULES */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Rules & Guidelines</GradientText>
             </h2>
           </header>
           <div className="grid gap-6 md:grid-cols-2">
             {rules.map((rule, i) => (
               <motion.div key={i} {...fadeUp(i * 0.15)}>
-                <GlassCard className="p-6 flex gap-3 items-start">
-                  <CheckCircle2 className="h-5 w-5 text-fuchsia-300 mt-1" />
-                  <p className="text-white/80 text-sm">{rule}</p>
+                <GlassCard className="p-6 flex gap-3 items-start border-slate-200 bg-white hover:border-red-200 transition">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-1" />
+                  <p className="text-slate-700 text-sm font-medium">{rule}</p>
                 </GlassCard>
               </motion.div>
             ))}
@@ -317,13 +317,13 @@ export default function EscrowPolicy() {
         {/* DISPUTES */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>Dispute Handling</GradientText>
             </h2>
           </header>
-          <GlassCard className="p-8 text-center">
-            <Gavel className="h-10 w-10 text-fuchsia-300 mx-auto mb-4" />
-            <p className="text-white/80 max-w-3xl mx-auto leading-relaxed">
+          <GlassCard className="p-8 text-center border-slate-200 bg-white shadow-md">
+            <Gavel className="h-10 w-10 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600 max-w-3xl mx-auto leading-relaxed text-lg">
               In the event of disagreements, Cyphire steps in to review all
               communications and workroom activity. Our moderation team ensures
               fair outcomes, balancing the interests of both clients and
@@ -335,23 +335,23 @@ export default function EscrowPolicy() {
         {/* FAQ */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <header className="text-center mb-12">
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="text-3xl font-bold md:text-4xl text-slate-900">
               <GradientText>FAQs</GradientText>
             </h2>
           </header>
           <div className="space-y-4">
             {faqs.map((f, i) => (
               <motion.div key={i} {...fadeUp(i * 0.15)}>
-                <GlassCard className="overflow-hidden">
+                <GlassCard className="overflow-hidden border-slate-200 bg-white shadow-sm hover:border-blue-200 transaction-colors">
                   <button
-                    className="flex w-full items-center justify-between px-6 py-4 text-left text-white font-medium"
+                    className="flex w-full items-center justify-between px-6 py-4 text-left text-slate-900 font-bold hover:bg-slate-50"
                     onClick={() => setOpenFAQ(openFAQ === i ? null : i)}
                   >
                     {f.q}
                     {openFAQ === i ? (
-                      <ChevronUp className="h-5 w-5 text-fuchsia-300" />
+                      <ChevronUp className="h-5 w-5 text-blue-500" />
                     ) : (
-                      <ChevronDown className="h-5 w-5 text-fuchsia-300" />
+                      <ChevronDown className="h-5 w-5 text-blue-500" />
                     )}
                   </button>
                   {openFAQ === i && (
@@ -359,7 +359,7 @@ export default function EscrowPolicy() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       transition={{ duration: 0.3 }}
-                      className="px-6 pb-4 text-sm text-white/70"
+                      className="px-6 pb-4 text-sm text-slate-600 leading-relaxed"
                     >
                       {f.a}
                     </motion.div>
@@ -372,20 +372,20 @@ export default function EscrowPolicy() {
 
         {/* GLOBAL */}
         <section className="relative mx-auto max-w-6xl px-6 py-20">
-          <div className="absolute inset-0 -z-10 bg-[url('/images/about/world-map-dark.png')] bg-cover bg-center opacity-20" />
-          <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl">
-            <h2 className="text-3xl font-bold text-center">
+          <div className="absolute inset-0 -z-10 bg-[url('/images/about/world-map-dark.png')] bg-cover bg-center opacity-10" style={{ filter: 'invert(1)' }} />
+          <div className="relative rounded-3xl border border-slate-200 bg-white/50 p-8 backdrop-blur-sm shadow-sm">
+            <h2 className="text-3xl font-bold text-center text-slate-900">
               <GradientText>Global Fairness</GradientText>
             </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-center text-white/70">
+            <p className="mt-4 max-w-2xl mx-auto text-center text-slate-600">
               Cyphire’s escrow system is designed for a borderless world —
               making collaboration safe, fast, and fair across continents.
             </p>
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6">
               {["India", "USA", "Europe", "Asia-Pacific"].map((region, i) => (
-                <GlassCard key={i} className="p-6 text-center">
-                  <h4 className="font-semibold text-white">{region}</h4>
-                  <p className="mt-2 text-sm text-white/70">Protected by escrow</p>
+                <GlassCard key={i} className="p-6 text-center border-slate-200 bg-white shadow-sm">
+                  <h4 className="font-bold text-slate-900">{region}</h4>
+                  <p className="mt-2 text-sm text-slate-500">Protected by escrow</p>
                 </GlassCard>
               ))}
             </div>
@@ -394,14 +394,14 @@ export default function EscrowPolicy() {
 
         {/* CTA */}
         <section className="relative mx-auto max-w-6xl px-6 py-20">
-          <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-sky-500/15 blur-2xl" />
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] p-8 backdrop-blur-xl md:p-12">
+          <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-sky-500/10 blur-2xl opacity-70" />
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 backdrop-blur-xl md:p-12 shadow-lg">
             <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
               <div className="max-w-2xl">
-                <h3 className="text-2xl font-semibold text-white md:text-3xl">
+                <h3 className="text-2xl font-bold md:text-3xl text-slate-900">
                   <GradientText>Escrow You Can Trust</GradientText>
                 </h3>
-                <p className="mt-3 text-white/70">
+                <p className="mt-3 text-slate-600">
                   Join thousands of clients and freelancers who rely on Cyphire
                   escrow for peace of mind, transparency, and fairness.
                 </p>

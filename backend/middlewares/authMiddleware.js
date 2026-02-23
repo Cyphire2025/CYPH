@@ -37,13 +37,33 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
-    const user = await User.findById(decoded.id).select(
-      "_id name email avatar avatarPublicId country phone skills projects slug bio createdAt updatedAt plan planStartedAt planExpiresAt isAdmin"
+    const authUserId = decoded?.id || decoded?._id;
+    if (!authUserId) {
+      console.warn("[AUTH] Token missing user id");
+      return res.status(401).json({ error: "Invalid token payload" });
+    }
+
+    const user = await User.findById(authUserId).select(
+      "_id name email avatar avatarPublicId country phone skills projects slug bio professionalProfile createdAt updatedAt plan planStartedAt planExpiresAt isAdmin tokenVersion"
     );
 
     if (!user) {
-      console.warn("[AUTH] User not found for token:", decoded.id);
+      console.warn("[AUTH] User not found for token:", authUserId);
       return res.status(401).json({ error: "User not found" });
+    }
+
+    const tokenVersionFromJwt = Number(decoded?.tv ?? decoded?.tokenVersion ?? 0);
+    const tokenVersionFromDb = Number(user.tokenVersion || 0);
+    if (tokenVersionFromJwt !== tokenVersionFromDb) {
+      console.warn(
+        "[AUTH] Token version mismatch for user:",
+        user._id,
+        "jwt:",
+        tokenVersionFromJwt,
+        "db:",
+        tokenVersionFromDb
+      );
+      return res.status(401).json({ error: "Session expired, please sign in again" });
     }
 
     req.user = user;
@@ -96,7 +116,13 @@ export const adminProtect = (req, res, next) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    req.admin = { role: "admin" };
+    req.admin = {
+      role: "admin",
+      email: decoded.email || process.env.ADMIN_EMAIL || "admin@local",
+      name: decoded.name || "Admin",
+      _id: decoded._id || decoded.id || null,
+      avatar: decoded.avatar || "",
+    };
     next();
   } catch (err) {
     console.error("[ADMIN][JWT] Middleware error:", err.message);
@@ -108,3 +134,30 @@ export const adminProtect = (req, res, next) => {
  * (Optional for future): Add support for magic link, SSO, or OAuth flows here.
  * You can also add "soft authentication" (if present, attach user; if not, continue as guest).
  */
+
+
+// // Require that user is authenticated AND has verified email + phone
+// export const requireVerifiedUser = (req, res, next) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ error: "Not authenticated" });
+//     }
+
+//     if (!req.user.emailVerified) {
+//       return res.status(403).json({ error: "Please verify your email to continue." });
+//     }
+
+//     if (!req.user.phoneVerified) {
+//       return res.status(403).json({ error: "Please verify your phone number to continue." });
+//     }
+
+//     if (req.user.shadowBanned) {
+//       return res.status(403).json({ error: "Account restricted. Contact support." });
+//     }
+
+//     next();
+//   } catch (err) {
+//     console.error("[AUTH] requireVerifiedUser error:", err.message);
+//     return res.status(500).json({ error: "Authorization error" });
+//   }
+// };

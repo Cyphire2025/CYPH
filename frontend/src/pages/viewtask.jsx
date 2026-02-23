@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
-// src/pages/viewtask.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/navbarsponhome";
 import Footer from "../components/footer";
 import {
@@ -13,46 +12,42 @@ import {
   Wallet,
   Clock,
   Star,
-  Briefcase, // --- FIX: Import Briefcase icon
+  Briefcase,
+  ExternalLink,
+  ShieldCheck,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  FileSpreadsheet,
+  File,
+  QrCode,
+  HandCoins,
+  Smartphone,
 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import toast, { Toaster } from 'react-hot-toast';
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
-const GradientText = ({ children, className = "" }) => (
-  <span className={`bg-gradient-to-r from-violet-300 via-fuchsia-300 to-sky-300 bg-clip-text text-transparent ${className}`}>{children}</span>
+const Background = () => (
+  <div className="absolute inset-0 -z-10 h-full w-full bg-slate-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+    <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-blue-400 opacity-20 blur-[100px]"></div>
+    <div className="absolute right-0 bottom-0 -z-10 h-[310px] w-[310px] rounded-full bg-indigo-400 opacity-20 blur-[100px]"></div>
+  </div>
 );
 
-const NeonButton = ({ children, className = "", ...props }) => (
-  <button
-    {...props}
-    className={`relative inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.03] focus:outline-none ${className}`}
-  >
-    <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-sky-600" />
-    <span className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-violet-400/40 via-fuchsia-400/30 to-sky-400/30 blur-md" />
-    <span className="relative">{children}</span>
-  </button>
-);
-
-const GlassCard = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl ${className}`}>
+const Card = ({ children, className = "" }) => (
+  <div className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
 const Label = ({ icon: Icon, children }) => (
-  <div className="mb-1 inline-flex items-center gap-2 text-xs text-white/70">
-    {Icon ? <Icon className="h-4 w-4" /> : null}
+  <div className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+    {Icon ? <Icon className="h-3.5 w-3.5 text-blue-500" /> : null}
     {children}
   </div>
 );
-
-const toDaysLeft = (dateIso) => {
-  if (!dateIso) return null;
-  const end = new Date(dateIso);
-  const diff = Math.ceil((end.getTime() - Date.now()) / 86400000);
-  return diff;
-};
 
 const inr = (n) => {
   if (n == null) return "—";
@@ -78,15 +73,11 @@ const CountdownTimer = ({ createdAt }) => {
 
   const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
   const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
-  const seconds = Math.floor((timeLeft / 1000) % 60);
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-gradient-to-r from-fuchsia-800/20 via-violet-800/20 to-sky-800/20 px-3 py-1 text-xs text-white/80 shadow-inner shadow-fuchsia-400/10">
-      <Clock className="h-3.5 w-3.5" />
-      <span className="font-mono">
-        {days}d {hours.toString().padStart(2, "0")}h:{minutes.toString().padStart(2, "0")}m:{seconds.toString().padStart(2, "0")}s
-      </span>
+    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 border border-indigo-100">
+      <Clock className="h-3 w-3" />
+      <span>{days}d {hours}h left</span>
     </span>
   );
 };
@@ -102,24 +93,21 @@ export default function ViewTask() {
 
   const [isOwner, setIsOwner] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (loading) {
-        setErr("⏱️ Server took too long. Please try again.");
-        setLoading(false);
-      }
-    }, 8000);
-    return () => clearTimeout(timeout);
-  }, [loading]);
+  const categoriesLower = useMemo(() => {
+    const cats = Array.isArray(task?.category) ? task.category : [task?.category];
+    return cats.map((c) => String(c || "").toLowerCase());
+  }, [task]);
+
+  const isEvent = categoriesLower.includes("event");
 
   useEffect(() => {
     let alive = true;
-
     const load = async () => {
       setLoading(true);
       setErr("");
-
       try {
         const [meRes, taskRes] = await Promise.all([
           fetch(`${API_BASE}/api/auth/me`, { cache: "no-store", credentials: "include" }),
@@ -134,15 +122,22 @@ export default function ViewTask() {
         const meUser = meJson?.user || null;
         setMe(meUser);
 
-        if (!tJson) {
-          throw new Error("Task not found");
-        } else {
-          setTask(tJson);
-          if (meUser?._id && Array.isArray(tJson.applicants)) {
-            const alreadyApplied = tJson.applicants.some((u) => String(u?._id || u) === String(meUser._id));
-            setApplied(alreadyApplied);
-            setIsOwner(String(tJson.createdBy) === String(meUser._id));
-          }
+        if (!tJson) throw new Error("Task not found");
+
+        const categories = Array.isArray(tJson.category) ? tJson.category : [tJson.category];
+        const isSponsorshipTask = categories.some((c) => String(c || "").toLowerCase() === "sponsorship");
+        if (isSponsorshipTask) {
+          navigate(`/sponsorship/${id}`, { replace: true });
+          return;
+        }
+
+        setTask(tJson);
+        if (meUser?._id && Array.isArray(tJson.applicants)) {
+          const alreadyApplied = tJson.applicants.some((u) => String(u?._id || u) === String(meUser._id));
+          setApplied(alreadyApplied);
+          // Handle populated createdBy
+          const creatorId = tJson.createdBy?._id || tJson.createdBy;
+          setIsOwner(String(creatorId) === String(meUser._id));
         }
       } catch (e) {
         if (alive) setErr(e.message || "Failed to load task");
@@ -150,259 +145,472 @@ export default function ViewTask() {
         if (alive) setLoading(false);
       }
     };
-
     load();
     return () => { alive = false; };
-  }, [id]);
+  }, [id, navigate]);
 
-  const deadlineDaysLeft = useMemo(() => toDaysLeft(task?.deadline), [task]);
-
-  // --- FIX: Logic to separate main category from sub-categories ---
-  const mainCategory = useMemo(() => {
-    return typeof task?.category === 'string' && task.category !== 'Sponsorship' ? task.category : null;
+  const deadlineDaysLeft = useMemo(() => {
+    if (!task?.deadline) return null;
+    return Math.ceil((new Date(task.deadline).getTime() - Date.now()) / 86400000);
   }, [task]);
 
-  const subCategories = useMemo(() => {
-    // This handles the old format where 'category' might be an array
-    const fromCategory = Array.isArray(task?.category) ? task.category : [];
-    const fromCategories = Array.isArray(task?.categories) ? task.categories : [];
-    // Combine and deduplicate, just in case
-    return [...new Set([...fromCategory, ...fromCategories])];
+  const categoryLabels = useMemo(() => {
+    const cats = [];
+    if (typeof task?.category === 'string' && task.category !== 'Sponsorship') cats.push(task.category);
+    if (Array.isArray(task?.category)) cats.push(...task.category);
+    if (Array.isArray(task?.categories)) cats.push(...task.categories);
+    return [...new Set(cats)]; // Deduplicate
   }, [task]);
 
   const isSponsorship = task?.category === 'Sponsorship';
-
   const appliedCount = Array.isArray(task?.applicants) ? task.applicants.length : 0;
   const totalSeats = Number(task?.numberOfApplicants) || 0;
 
   const handleApply = async () => {
-    try {
-      if (!me?._id) {
-        alert("Please sign in first.");
-        navigate("/signin");
-        return;
-      }
-      if (isOwner) {
-        alert("You cannot apply to your own task.");
-        return;
-      }
-      if (applied) return;
+    if (!me?._id) {
+      toast.error("Please sign in to apply");
+      setTimeout(() => navigate("/signin"), 1500);
+      return;
+    }
+    if (isOwner) {
+      toast.error("You cannot apply to your own task");
+      return;
+    }
+    if (applied) return;
 
+    setApplying(true);
+    try {
       const res = await apiFetch(`${API_BASE}/api/tasks/${task._id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to apply");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to apply");
 
       setTask((prev) => ({
         ...prev,
-        applicants: data?.task?.applicants || [...(prev?.applicants || []), me._id],
+        applicants: [...(prev?.applicants || []), me._id],
       }));
       setApplied(true);
+      toast.success("Application submitted successfully!");
     } catch (e) {
-      alert(e.message || "Could not apply right now.");
+      toast.error(e.message || "Could not apply right now.");
+    } finally {
+      setApplying(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0a0a0f] via-[#0c0c14] to-[#000] text-white">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="animate-spin h-10 w-10 text-fuchsia-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <p className="text-sm text-white/60">Loading task details...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-900">
+        <div className="w-16 h-16 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4" />
+        <p className="text-slate-500 font-medium">Loading details...</p>
+      </div>
+    );
+  }
+
+  if (err || !task) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Couldn't load task</h2>
+          <p className="text-slate-500 mb-6">{err || "Task not found"}</p>
+          <button onClick={() => navigate(-1)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 font-semibold hover:bg-slate-50">
+            Go Back
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#0c0c14] to-[#000] text-gray-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans relative">
       <Navbar />
+      <Background />
+      <Toaster position="top-center" />
 
-      <main className="relative mx-auto max-w-7xl px-6 pt-24 pb-16">
-        <div className="pointer-events-none absolute -left-20 -top-10 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 top-20 h-60 w-60 rounded-full bg-violet-500/20 blur-3xl" />
+      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 pt-24 pb-16">
 
-        <div className="mb-6">
+        {/* Navigation Header */}
+        <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white/80 backdrop-blur-xl transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all"
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> Back to listings
           </button>
+          {isOwner && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wide">
+              <ShieldCheck className="w-3.5 h-3.5" /> Your Post
+            </span>
+          )}
         </div>
 
-        {err && (
-          <GlassCard className="p-6 text-red-300">
-            Failed to load task: {err}
-          </GlassCard>
-        )}
+        <div className={`grid gap-8 ${isSponsorship ? "grid-cols-1" : "lg:grid-cols-3"}`}>
 
-        {!loading && task && (
-          <div className={`${isSponsorship ? "flex justify-center px-4" : "grid gap-8 md:grid-cols-3"}`}>
-            <div className={`${isSponsorship ? "w-full max-w-5xl" : "md:col-span-2"}`}>
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.06] overflow-hidden backdrop-blur-xl"
-              >
-                <div className="h-32 sm:h-40 md:h-80 w-full overflow-hidden">
-                  {task.logo?.url ? (
-                    <img src={task.logo.url} alt="task-logo" className="w-full h-full object-cover" />
-                  ) : task.attachments?.length > 0 ? (
-                    <img src={task.attachments[0].url} alt="task-attachment" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-white/50 italic bg-black/20">
-                      No Image
-                    </div>
-                  )}
+          {/* MAIN CONTENT COLUMN */}
+          <div className={`space-y-6 ${isSponsorship ? "max-w-4xl mx-auto" : "lg:col-span-2"}`}>
+
+            {/* Hero Card */}
+            <div className="rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50 overflow-hidden">
+              {/* Header Image */}
+              <div className="h-48 md:h-64 w-full bg-slate-100 relative overflow-hidden group">
+                {task.logo?.url ? (
+                  <img src={task.logo.url} alt="Task Header" className="w-full h-full object-cover" />
+                ) : task.attachments?.length > 0 && /\.(jpg|jpeg|png|webp)$/i.test(task.attachments[0].url) ? (
+                  <img src={task.attachments[0].url} alt="Task Attachment" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col items-center justify-center text-slate-400">
+                    <Briefcase className="w-12 h-12 mb-2 opacity-50" />
+                    <span className="text-sm font-medium">No cover image</span>
+                  </div>
+                )}
+
+                {/* Status Badge Overlay */}
+                {task.createdAt && (
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm text-xs font-bold text-slate-700 border border-white/20">
+                    Posted {new Date(task.createdAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 md:p-8">
+                {/* Tags */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {categoryLabels.map((cat, i) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+                      <Briefcase className="w-3 h-3" /> {cat}
+                    </span>
+                  ))}
+                  {task.createdAt && <CountdownTimer createdAt={task.createdAt} />}
                 </div>
 
-                <div className="p-6">
-                  {/* --- FIX: Display both main and sub categories --- */}
-                  <div className="mb-3 inline-flex flex-wrap items-center gap-2 text-xs text-white/70">
-                    {mainCategory && (
-                       <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/50 bg-fuchsia-500/20 px-3 py-1 font-medium text-fuchsia-200">
-                         <Briefcase className="h-4 w-4" /> {mainCategory}
-                       </span>
-                    )}
-                    {subCategories.map((cat, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1"
-                      >
-                        <Star className="h-3.5 w-3.5" /> {cat}
-                      </span>
-                    ))}
-                    {task?.createdAt && <CountdownTimer createdAt={task.createdAt} />}
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 leading-tight">
+                  {task.title}
+                </h1>
+
+                <div className="prose prose-slate max-w-none text-slate-600 mb-8 leading-relaxed">
+                  {task.description}
+                </div>
+
+                {/* Metadata Grid */}
+                {task?.metadata && Object.keys(task.metadata).length > 0 && (
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                      <ShieldCheck className="w-5 h-5 text-blue-600" />
+                      <h3 className="font-bold text-slate-800">Specifications</h3>
+                    </div>
+                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                      {Object.entries(task.metadata).map(([key, value]) => {
+                        // Hide internal or contact fields from general value grid
+                        if (["contactName", "contactEmail", "contactPhone", "contactWebsite", "paymentUpiId", "paymentPhone", "paymentNotes", "paymentQrUrl", "paymentQrPublicId", "tier"].includes(key)) return null;
+
+                        if (!value || (Array.isArray(value) && value.length === 0)) return null;
+                        const displayValue = Array.isArray(value) ? value.join(", ") : String(value);
+                        return (
+                          <div key={key}>
+                            <dt className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1">{key.replace(/([A-Z])/g, " $1")}</dt>
+                            <dd className="text-sm font-medium text-slate-700">{displayValue}</dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                  </div>
+                )}
+
+                {/* Attachments */}
+                {Array.isArray(task.attachments) && task.attachments.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500 mb-3 flex items-center gap-2">
+                      <Paperclip className="w-4 h-4" /> Attachments
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {task.attachments.map((file, i) => {
+                        const rawUrl = file.url || file;
+                        const name = file.original_name || file.name || `Attachment ${i + 1}`;
+
+                        // Check for Cloudinary and non-image types to force download
+                        const isCloudinary = rawUrl.includes("cloudinary.com") && rawUrl.includes("/upload/");
+                        const isImage = /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/i.test(rawUrl);
+
+                        let href = rawUrl;
+                        if (isCloudinary && !isImage) {
+                          // Inject fl_attachment to force download header from Cloudinary
+                          href = rawUrl.replace("/upload/", "/upload/fl_attachment/");
+                        }
+
+                        return (
+                          <a key={i} href={href} target="_blank" rel="noreferrer" download={!isImage}
+                            className="group relative aspect-video bg-slate-100 rounded-xl border border-slate-200 overflow-hidden hover:border-blue-300 transition-all flex items-center justify-center">
+                            {isImage ? (
+                              <img src={rawUrl} alt={name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                            ) : (
+                              <div className="flex flex-col items-center text-slate-400">
+                                {(() => {
+                                  const ext = name.split('.').pop()?.toLowerCase();
+                                  if (ext === 'pdf') return <FileText className="w-8 h-8 mb-1 text-red-500" />;
+                                  if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileSpreadsheet className="w-8 h-8 mb-1 text-emerald-500" />;
+                                  if (['doc', 'docx'].includes(ext)) return <FileText className="w-8 h-8 mb-1 text-blue-500" />;
+                                  if (['ppt', 'pptx'].includes(ext)) return <File className="w-8 h-8 mb-1 text-orange-500" />;
+                                  return <Paperclip className="w-8 h-8 mb-1" />;
+                                })()}
+                                <span className="text-[10px] uppercase font-bold text-slate-500 max-w-[90%] truncate">
+                                  {name.split('.').pop()?.toUpperCase() || 'FILE'}
+                                </span>
+                              </div>
+                            )}
+                            <div className="absolute inset-x-0 bottom-0 bg-white/90 backdrop-blur p-2 translate-y-full group-hover:translate-y-0 transition-transform">
+                              <p className="text-xs truncate font-medium text-slate-700 text-center">{name}</p>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Details Modal for Events */}
+          <AnimatePresence>
+            {false && task?.metadata && (
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+                onClick={() => setShowContact(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden"
+                >
+                  <button onClick={() => setShowContact(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+                    <AlertCircle className="w-5 h-5 text-slate-500" />
+                  </button>
+
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users size={32} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900">{task.metadata.contactName || "Organizer"}</h3>
+                    <p className="text-slate-500">Event Contact Details</p>
                   </div>
 
-                  <h1 className="text-3xl md:text-4xl font-bold text-white">
-                    <GradientText>{task.title}</GradientText>
-                  </h1>
-
-                  <p className="mt-5 text-white/80 leading-relaxed">
-                    {task.description}
-                  </p>
-
-                  {/* --- FIX: This section now works for all categories with metadata --- */}
-                  {task?.metadata && Object.keys(task.metadata).length > 0 && (
-                    <div className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-black/20 p-5">
-                      <h3 className="text-lg font-semibold text-white">Additional Details</h3>
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-white/80">
-                        {Object.entries(task.metadata).map(([key, value]) => {
-                          if (!value || (Array.isArray(value) && value.length === 0)) return null;
-                          const displayValue = Array.isArray(value) ? value.join(", ") : String(value);
-                          if (!displayValue) return null;
-
-                          return (
-                            <li key={key} className="flex flex-col">
-                              <span className="font-medium capitalize text-fuchsia-300">
-                                {key.replace(/([A-Z])/g, " $1")}
-                              </span>
-                              <span>{displayValue}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {isSponsorship && isOwner && (
-                    <div className="mt-8">
-                      <NeonButton onClick={() => navigate("/dashboard")}>
-                        View Contact Details
-                      </NeonButton>
-                    </div>
-                  )}
-
-                  {Array.isArray(task.attachments) && task.attachments.length > 0 && (
-                    <div className="mt-8">
-                      <Label icon={Paperclip}>Attachments</Label>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {task.attachments.map((a, i) => {
-                          const url = a?.url || (typeof a === "string" ? a : "#");
-                          const name = a?.original_name || a?.name || `File ${i + 1}`;
-                          return (
-                            <a key={i} href={url} target="_blank" rel="noreferrer" title={name}
-                              className="block w-36 h-24 overflow-hidden rounded-md bg-black/30 group relative border border-white/10 p-1">
-                              <img src={url} className="w-full h-full object-cover rounded" onError={(e) => { e.target.onerror = null; e.target.src = 'placeholder.png'; }}/>
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-2">
-                                <p className="text-xs text-center text-white break-words">{name}</p>
-                              </div>
-                            </a>
-                          );
-                        })}
+                  <div className="space-y-4">
+                    <a href={`mailto:${task.metadata.contactEmail}`} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-purple-200 transition-colors group">
+                      <div className="p-3 bg-white rounded-lg shadow-sm text-blue-500 group-hover:scale-110 transition-transform"><FileText className="w-5 h-5" /></div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Email</p>
+                        <p className="font-semibold text-slate-700 break-all">{task.metadata.contactEmail}</p>
                       </div>
+                    </a>
+
+                    {task.metadata.contactPhone && (
+                      <a href={`tel:${task.metadata.contactPhone}`} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-purple-200 transition-colors group">
+                        <div className="p-3 bg-white rounded-lg shadow-sm text-green-500 group-hover:scale-110 transition-transform"><FileSpreadsheet className="w-5 h-5" /></div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Phone</p>
+                          <p className="font-semibold text-slate-700">{task.metadata.contactPhone}</p>
+                        </div>
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="mt-8 text-center">
+                    <button onClick={() => setShowContact(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-800">
+                      Close
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* SIDEBAR COLUMN */}
+          {!isSponsorship && (
+            <div className="space-y-6">
+              {isEvent ? (
+                <Card className="border-purple-100 shadow-lg shadow-purple-500/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                    <QrCode size={96} className="text-purple-500 transform rotate-12 translate-x-8 -translate-y-6" />
+                  </div>
+                  <div className="relative z-10 space-y-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-sm text-slate-500 font-medium mb-3">Want to sponsor this event?</div>
+                      {isOwner ? (
+                        <button
+                          onClick={() => navigate("/dashboard")}
+                          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-all"
+                        >
+                          View Dashboard <ExternalLink size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setShowContact(!showContact)}
+                          className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg 
+                            ${showContact
+                              ? "bg-purple-100 text-purple-700 border border-purple-200 shadow-none"
+                              : "bg-purple-600 text-white hover:bg-purple-700 shadow-purple-500/20"}`}
+                        >
+                          <HandCoins size={18} /> {showContact ? "Hide Sponsorship Details" : "Sponsor Anonymously"}
+                        </button>
+                      )}
+                    </div>
+
+                    <AnimatePresence>
+                      {showContact && task?.metadata && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
+                            <h4 className="font-bold text-base text-purple-900 mb-4 flex items-center gap-2">
+                              <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                                <HandCoins className="w-4 h-4" />
+                              </span>
+                              Anonymous Sponsorship Details
+                            </h4>
+
+                            <div className="space-y-3">
+                              {task.metadata.paymentQrUrl ? (
+                                <a
+                                  href={task.metadata.paymentQrUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm flex flex-col items-center"
+                                >
+                                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2 self-start">Scan QR to Sponsor</p>
+                                  <img
+                                    src={task.metadata.paymentQrUrl}
+                                    alt="Sponsorship payment QR"
+                                    className="h-48 w-48 rounded-lg border border-slate-200 object-cover"
+                                  />
+                                </a>
+                              ) : (
+                                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
+                                  <p className="text-sm font-semibold text-slate-600">
+                                    No QR uploaded yet. Use payment details below.
+                                  </p>
+                                </div>
+                              )}
+
+                              {task.metadata.paymentUpiId && (
+                                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
+                                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">UPI ID</p>
+                                  <p className="text-sm font-bold text-slate-800 break-all">{task.metadata.paymentUpiId}</p>
+                                </div>
+                              )}
+
+                              {task.metadata.paymentPhone && (
+                                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
+                                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">Payment Phone</p>
+                                  <a href={`tel:${task.metadata.paymentPhone}`} className="inline-flex items-center gap-2 text-sm font-bold text-slate-800 hover:text-green-600">
+                                    <Smartphone className="w-4 h-4" />
+                                    {task.metadata.paymentPhone}
+                                  </a>
+                                </div>
+                              )}
+
+                              {task.metadata.paymentNotes && (
+                                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-sm">
+                                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">Payment Note</p>
+                                  <p className="text-sm font-semibold text-slate-700">{task.metadata.paymentNotes}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </Card>
+              ) : (
+                <Card className="border-blue-100 shadow-lg shadow-blue-500/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Briefcase size={100} className="text-blue-500 transform rotate-12 translate-x-10 -translate-y-10" />
+                  </div>
+
+                  <div className="relative z-10">
+                    <div className="mb-4">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Budget</span>
+                      <div className="text-3xl font-extrabold text-slate-900 mt-1">{inr(task.price)}</div>
+                    </div>
+
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={isOwner ? () => navigate("/dashboard") : handleApply}
+                      disabled={!isOwner && (applied || applying)}
+                      className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all 
+                                  ${isOwner
+                          ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20"
+                          : applied
+                            ? "bg-green-50 text-green-700 border border-green-200 cursor-default shadow-none"
+                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20"
+                        }`}
+                    >
+                      {isOwner ? (
+                        <>View Dashboard <ExternalLink size={16} /></>
+                      ) : applied ? (
+                        <><CheckCircle size={18} /> Applied Successfully</>
+                      ) : applying ? (
+                        "Processing..."
+                      ) : (
+                        "Apply Now"
+                      )}
+                    </motion.button>
+                    {!isOwner && !applied && (
+                      <p className="text-xs text-center text-slate-400 mt-3">
+                        Applications close on {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'expiry'}.
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              <Card className="space-y-6">
+                <div>
+                  <Label icon={Calendar}>Deadline</Label>
+                  <div className="font-semibold text-slate-800 mt-1">
+                    {task.deadline ? new Date(task.deadline).toLocaleDateString(undefined, {
+                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                    }) : "No deadline"}
+                  </div>
+                  {deadlineDaysLeft !== null && (
+                    <span className={`text-xs font-medium ${deadlineDaysLeft < 0 ? "text-red-500" : "text-emerald-600"}`}>
+                      {deadlineDaysLeft < 0 ? "Expired" : `${deadlineDaysLeft} days remaining`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="h-px bg-slate-100" />
+
+                <div>
+                  <Label icon={Users}>Applicants</Label>
+                  <div className="font-semibold text-slate-800 mt-1 text-lg flex items-center gap-2">
+                    {appliedCount}
+                    {totalSeats > 0 && <span className="text-slate-400 text-base font-normal">/ {totalSeats} seats</span>}
+                  </div>
+                  {totalSeats > 0 && (
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className={`${isEvent ? "bg-purple-500" : "bg-blue-500"} h-full rounded-full transition-all duration-1000`}
+                        style={{ width: `${Math.min((appliedCount / totalSeats) * 100, 100)}%` }}
+                      />
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </Card>
             </div>
+          )}
 
-            {!isSponsorship && (
-              <div className="md:col-span-1">
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4 sticky top-24"
-                >
-                  <GlassCard className="p-5">
-                    <Label icon={Wallet}>Budget</Label>
-                    <div className="text-xl font-semibold text-white">{inr(task.price)}</div>
-                  </GlassCard>
-
-                  <GlassCard className="p-5">
-                    <Label icon={Calendar}>Deadline</Label>
-                    <div className="text-white">
-                      {task.deadline ? new Date(task.deadline).toLocaleDateString() : "—"}
-                    </div>
-                    {deadlineDaysLeft != null && (
-                      <div className={`mt-1 text-sm ${deadlineDaysLeft < 0 ? "text-red-300" : "text-white/70"}`}>
-                        {deadlineDaysLeft < 0
-                          ? `Expired ${Math.abs(deadlineDaysLeft)} day${Math.abs(deadlineDaysLeft) !== 1 ? "s" : ""} ago`
-                          : `${deadlineDaysLeft} day${deadlineDaysLeft !== 1 ? "s" : ""} left`}
-                      </div>
-                    )}
-                  </GlassCard>
-
-                  <GlassCard className="p-5">
-                    <Label icon={Users}>Applicants</Label>
-                    <div className="text-white">
-                      {totalSeats > 0 ? `${appliedCount}/${totalSeats}` : `${appliedCount}`}
-                    </div>
-                  </GlassCard>
-
-                  <GlassCard className="p-5">
-                    <div className="flex flex-col gap-3">
-                      {!isOwner && (
-                        <NeonButton
-                          onClick={handleApply}
-                          disabled={applied}
-                          className={applied ? "opacity-60 cursor-not-allowed" : ""}
-                        >
-                          {applied ? "Applied" : "Apply to this Task"}
-                        </NeonButton>
-                      )}
-                      {isOwner && (
-                        <NeonButton onClick={() => navigate("/dashboard")}>
-                          View Dashboard
-                        </NeonButton>
-                      )}
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </main>
 
       <Footer />

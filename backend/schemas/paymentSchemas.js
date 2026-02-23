@@ -4,6 +4,34 @@ export const createOrderSchema = z.object({
   amount: z.coerce.number().min(1),
 });
 
+const paidPlanSchema = z.enum(["plus", "ultra"]);
+const listingCategorySchema = z.enum(["sponsorship"]);
+const listingPlanSchema = z.enum(["basic_boost", "premium"]);
+
+export const createPlanOrderSchema = z.object({
+  plan: paidPlanSchema,
+});
+
+export const verifyPlanPaymentSchema = z.object({
+  plan: paidPlanSchema,
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1),
+});
+
+export const createListingOrderSchema = z.object({
+  category: listingCategorySchema,
+  listingPlan: listingPlanSchema,
+});
+
+export const verifyListingPaymentSchema = z.object({
+  category: listingCategorySchema,
+  listingPlan: listingPlanSchema,
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1),
+});
+
 export const verifyPaymentAndCreateTaskSchema = z.object({
   razorpay_order_id: z.string().min(1),
   razorpay_payment_id: z.string().min(1),

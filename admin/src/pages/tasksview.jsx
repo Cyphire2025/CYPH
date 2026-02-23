@@ -25,10 +25,7 @@ export default function TasksView() {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const token = localStorage.getItem("admin-token");
-        const res = await fetch(`${API_BASE}/api/admin/tasks`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch(`${API_BASE}/api/admin/tasks`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch tasks");
         setTasks(data);
@@ -41,7 +38,6 @@ export default function TasksView() {
 
   const handleAction = async (id, action, body = null) => {
     try {
-      const token = localStorage.getItem("admin-token");
       let method = "PATCH";
       let url = `${API_BASE}/api/admin/tasks/${id}/${action}`;
 
@@ -55,10 +51,6 @@ export default function TasksView() {
 
       const res = await apiFetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: body ? JSON.stringify(body) : null,
       });
 

@@ -2,6 +2,7 @@
 
 import User from "../models/userModel.js";
 import cloudinary from "../utils/cloudinary.js";
+import { getPlanDurationMs, isPaidPlan } from "../utils/planConfig.js";
 
 // --- Simple logger; swap with Winston/Sentry in production ---
 const logger = {
@@ -32,13 +33,80 @@ const uploadToCloudinary = (file, folder) =>
     stream.end(file.buffer);
   });
 
+const toStringArray = (value, max = 20, maxLen = 120) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((v) => String(v || "").trim())
+      .filter(Boolean)
+      .slice(0, max)
+      .map((v) => v.slice(0, maxLen));
+  }
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .slice(0, max)
+      .map((v) => v.slice(0, maxLen));
+  }
+  return [];
+};
+
+const normalizeProfessionalProfile = (raw = {}) => {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const level = ["starter", "intermediate", "advanced", "expert"].includes(String(src.expertiseLevel || ""))
+    ? String(src.expertiseLevel)
+    : "";
+  const availability = ["open", "limited", "booked", "not-looking"].includes(String(src.availability || ""))
+    ? String(src.availability)
+    : "";
+  const yearsNum = Number(src.yearsExperience);
+  const yearsExperience = Number.isFinite(yearsNum) ? Math.max(0, Math.min(60, Math.floor(yearsNum))) : undefined;
+
+  const allowedDomains = new Set(["tech", "education", "event", "architecture"]);
+  const domains = toStringArray(src.domains, 4, 32).filter((d) => allowedDomains.has(d));
+
+  const domainIn = src.domainDetails && typeof src.domainDetails === "object" ? src.domainDetails : {};
+  const makeDomain = (key) => {
+    const d = domainIn[key] && typeof domainIn[key] === "object" ? domainIn[key] : {};
+    return {
+      focusAreas: toStringArray(d.focusAreas, 20, 64),
+      primaryStack: toStringArray(d.primaryStack, 30, 64),
+      deliverables: toStringArray(d.deliverables, 20, 80),
+      proofPoints: String(d.proofPoints || "").trim().slice(0, 500),
+    };
+  };
+
+  return {
+    headline: String(src.headline || "").trim().slice(0, 140),
+    valueProposition: String(src.valueProposition || "").trim().slice(0, 280),
+    expertiseLevel: level,
+    yearsExperience,
+    availability,
+    responseSla: String(src.responseSla || "").trim().slice(0, 64),
+    domains,
+    serviceLines: toStringArray(src.serviceLines, 30, 64),
+    toolsAndStack: toStringArray(src.toolsAndStack, 40, 64),
+    engagementModes: toStringArray(src.engagementModes, 20, 64),
+    certifications: toStringArray(src.certifications, 20, 120),
+    achievements: toStringArray(src.achievements, 20, 160),
+    portfolioHighlights: toStringArray(src.portfolioHighlights, 20, 160),
+    domainDetails: {
+      tech: makeDomain("tech"),
+      education: makeDomain("education"),
+      event: makeDomain("event"),
+      architecture: makeDomain("architecture"),
+    },
+  };
+};
+
 /**
  * PUT /api/users/me  -> update profile fields (name/country/phone/skills/bio)
  * Triggers slug (re)generation logic in model if name changed
  */
 export const updateMe = async (req, res, next) => {
   try {
-    const { name, country, phone, skills, bio } = req.body;
+    const { name, country, phone, skills, bio, professionalProfile } = req.body;
 
     // normalize skills (array OR comma-separated)
     let normalizedSkills = [];
@@ -61,12 +129,15 @@ export const updateMe = async (req, res, next) => {
     if (typeof phone === "string") user.phone = phone.trim();
     if (Array.isArray(normalizedSkills)) user.skills = normalizedSkills;
     if (typeof bio === "string") user.bio = bio.trim().slice(0, 300);
+    if (professionalProfile && typeof professionalProfile === "object") {
+      user.professionalProfile = normalizeProfessionalProfile(professionalProfile);
+    }
 
     await user.save();
 
     // return a clean projection
     const fresh = await User.findById(user._id).select(
-      "_id name email avatar avatarPublicId country phone skills projects slug bio createdAt updatedAt"
+      "_id name email avatar avatarPublicId country phone skills projects slug bio professionalProfile createdAt updatedAt"
     );
 
     req.log.info("User updated profile:", user.email, user._id);
@@ -103,7 +174,7 @@ export const updateAvatar = async (req, res, next) => {
       {
         new: true,
         select:
-          "_id name email avatar avatarPublicId country phone skills projects slug bio createdAt updatedAt",
+          "_id name email avatar avatarPublicId country phone skills projects slug bio professionalProfile createdAt updatedAt",
       }
     );
 
@@ -214,7 +285,7 @@ export const uploadProjectMedia = async (req, res, next) => {
     await user.save();
 
     const refreshed = await User.findById(req.user._id).select(
-      "_id name email avatar avatarPublicId country phone skills projects slug bio createdAt updatedAt"
+      "_id name email avatar avatarPublicId country phone skills projects slug bio professionalProfile createdAt updatedAt"
     );
 
     req.log.info("User uploaded project media:", user.email, user._id, "project", index);
@@ -372,6 +443,10 @@ export const publicProfileBySlug = async (req, res, next) => {
       country: user.country || "",
       skills: Array.isArray(user.skills) ? user.skills : [],
       bio: user.bio || "",
+      professionalProfile:
+        user.professionalProfile && typeof user.professionalProfile === "object"
+          ? user.professionalProfile
+          : {},
       projects: Array.isArray(user.projects) ? user.projects : [],
       slug: user.slug,
     };
@@ -454,21 +529,36 @@ export const blockUser = async (req, res, next) => {
 
 export const setUserPlan = async (req, res, next) => {
   try {
-    const { id } = req.params;        // admin override OR
-    const { plan } = req.body;        // frontend request
+    const { id } = req.params; // admin override OR
+    const requestedPlan = String(req.body?.plan || "").toLowerCase(); // frontend request
     const userId = id || req.user._id; // if no id, fallback to logged-in user
+    const isAdminOverride = Boolean(id);
 
-    if (!["free", "plus", "ultra"].includes(plan)) {
+    if (!["free", "plus", "ultra"].includes(requestedPlan)) {
       return res.status(400).json({ error: "Invalid plan" });
+    }
+
+    // User-side hardening: paid plans can only be activated after verified payment.
+    if (!isAdminOverride && isPaidPlan(requestedPlan)) {
+      return res.status(403).json({
+        error: "Paid plans must be activated through payment verification.",
+      });
     }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    user.plan = plan;
-    user.planStartedAt = new Date();
-    user.planExpiresAt =
-      plan === "free" ? null : new Date(Date.now() + 10 * 1000);
+    const now = Date.now();
+    user.plan = requestedPlan;
+    user.planStartedAt = new Date(now);
+
+    const durationMs = getPlanDurationMs(requestedPlan);
+    if (!durationMs) {
+      user.planExpiresAt = null;
+    } else {
+      const carryForwardFrom = Math.max(now, user.planExpiresAt?.getTime?.() || 0);
+      user.planExpiresAt = new Date(carryForwardFrom + durationMs);
+    }
 
     await user.save();
     res.json({

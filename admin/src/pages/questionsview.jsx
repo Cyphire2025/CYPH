@@ -18,15 +18,12 @@ export default function QuestionsView() {
   const [showAudit, setShowAudit] = useState(false);
   const [auditFor, setAuditFor] = useState(null);
 
-  const token = localStorage.getItem("admin-token");
   const PAGE_SIZE = 12;
   const [page, setPage] = useState(1);
 
   const fetchQuestions = async () => {
     setLoading(true);
-    const res = await fetch(`${API_BASE}/api/admin/questions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch(`${API_BASE}/api/admin/questions`);
     const data = await res.json();
     setQuestions(Array.isArray(data.items) ? data.items : []);
     setLoading(false);
@@ -56,7 +53,6 @@ export default function QuestionsView() {
     setSaving((s) => ({ ...s, [id]: true }));
     const res = await apiFetch(`${API_BASE}/api/admin/questions/${id}/answer`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ answer: editAnswers[id] }),
     });
     if (!res.ok) {
@@ -73,7 +69,6 @@ export default function QuestionsView() {
     setToggling((t) => ({ ...t, [id]: true }));
     await apiFetch(`${API_BASE}/api/admin/questions/${id}/show`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ show: !show }), // <--- CRITICAL: send the new value!
     });
     setToggling((t) => ({ ...t, [id]: false }));
@@ -84,9 +79,7 @@ export default function QuestionsView() {
   const openAuditLog = async (id) => {
     setAuditFor(id);
     setShowAudit(true);
-    const res = await fetch(`${API_BASE}/api/admin/questions/audit/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch(`${API_BASE}/api/admin/questions/audit/${id}`);
     const data = await res.json();
     setAuditLog(Array.isArray(data.auditLog) ? data.auditLog : []);
   };

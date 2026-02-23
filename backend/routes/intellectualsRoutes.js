@@ -2,7 +2,7 @@
 
 import express from "express";
 import { protect, requireAdmin } from "../middlewares/authMiddleware.js";
-import { upload } from "../middlewares/uploadMiddleware.js";
+import { upload, enforceTotalSize } from "../middlewares/uploadMiddleware.js";
 import { validateBody } from "../middlewares/validate.js";
 import { limitApplications } from "../middlewares/rateLimiter.js";
 import { coerceJson } from "../middlewares/coerceJson.js";
@@ -30,6 +30,7 @@ router.post(
   protect,
   limitApplications,
   upload.array("attachments", 10),
+  enforceTotalSize,
   coerceJson(["profile", "professor", "influencer", "industry_expert", "coach"]),
   validateBody(createApplicationSchema),
   createApplication

@@ -3,6 +3,7 @@ import { z } from "zod";
 // For posting a workroom message
 export const postMessageSchema = z.object({
   text: z.string().max(2000, "Message too long").optional(),
+  clientTempId: z.string().max(120).optional(),
   // Attachments are handled by multer, so not validated here.
 });
 

@@ -5,7 +5,7 @@ export default function PostingOverlay({ posting, posted, error, redirectTo = "T
   if (!posting && !posted && !error) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -19,17 +19,17 @@ export default function PostingOverlay({ posting, posted, error, redirectTo = "T
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
-              className="mx-auto mb-6 flex items-center justify-center w-24 h-24 rounded-full bg-red-500/20 border-4 border-red-400 shadow-[0_0_40px_rgba(239,68,68,0.6)]"
+              className="mx-auto mb-6 flex items-center justify-center w-24 h-24 rounded-full bg-red-100 border-4 border-red-500 shadow-sm"
             >
               <span className="text-5xl">❌</span>
             </motion.div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-red-400 mb-2">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-red-600 mb-2">
               Failed to Post
             </h2>
-            <p className="text-gray-300 mb-6">Something went wrong. Please try again.</p>
+            <p className="text-gray-600 mb-6">Something went wrong. Please try again.</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md"
             >
               Retry
             </button>
@@ -43,15 +43,15 @@ export default function PostingOverlay({ posting, posted, error, redirectTo = "T
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-              className="mx-auto mb-6 flex items-center justify-center w-24 h-24 rounded-full bg-green-500/20 border-4 border-green-400 shadow-[0_0_40px_rgba(34,197,94,0.6)]"
+              className="mx-auto mb-6 flex items-center justify-center w-24 h-24 rounded-full bg-emerald-100 border-4 border-emerald-500 shadow-sm"
             >
               <span className="text-5xl">✅</span>
             </motion.div>
 
-            <h2 className="text-2xl md:text-3xl font-extrabold text-green-400 mb-2">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-emerald-600 mb-2">
               Task Posted Successfully!
             </h2>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-600 mb-6">
               Redirecting you to {redirectTo}...
             </p>
 
@@ -88,12 +88,12 @@ export default function PostingOverlay({ posting, posted, error, redirectTo = "T
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              className="h-20 w-20 rounded-full border-4 border-fuchsia-500 border-t-transparent mb-8 shadow-lg"
+              className="h-20 w-20 rounded-full border-4 border-emerald-500 border-t-transparent mb-8"
             />
-            <h2 className="text-2xl md:text-3xl font-extrabold text-transparent bg-gradient-to-r from-fuchsia-400 via-purple-400 to-sky-400 bg-clip-text">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
               Posting your task...
             </h2>
-            <p className="mt-3 text-gray-300 text-sm md:text-base">
+            <p className="mt-3 text-gray-600 text-sm md:text-base">
               Please wait while we upload your task
             </p>
           </>

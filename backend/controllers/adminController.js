@@ -11,15 +11,40 @@ import HelpQuestion from "../models/helpQuestionModel.js";
 import BlockedIp from "../models/blockedIpModel.js";
 
 
-const signAdminJwt = () =>
-  jwt.sign({ role: "admin" }, process.env.ADMIN_JWT_SECRET, { expiresIn: process.env.ADMIN_JWT_EXPIRES || "1h" });
+const signAdminJwt = (payload = {}) =>
+  jwt.sign({ role: "admin", ...payload }, process.env.ADMIN_JWT_SECRET, {
+    expiresIn: process.env.ADMIN_JWT_EXPIRES || "1h",
+  });
+
+const getLogger = (req) => req?.log || console;
+const isProd = process.env.NODE_ENV === "production";
+const adminCookieSameSite = process.env.COOKIE_SAMESITE || (isProd ? "none" : "lax");
+
+const setAdminAuthCookie = (res, token) => {
+  res.cookie("admin_token", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: adminCookieSameSite,
+    path: "/",
+    maxAge: 60 * 60 * 1000, // 1 hour
+  });
+};
+
+const clearAdminAuthCookie = (res) => {
+  res.clearCookie("admin_token", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: adminCookieSameSite,
+    path: "/",
+  });
+};
 
 // --- Audit Log (stub: expand to store in DB or send to logging service) ---
-const logAdminAction = async (admin, action, details) => {
+const logAdminAction = async (req, admin, action, details) => {
   // Example: store in a collection or use an external logging service
   // await AdminAuditLog.create({ adminId: admin._id, action, details, at: new Date() });
   // For now, just log:
-  req.log.info(`[ADMIN AUDIT] ${admin?.email || "?"}: ${action}`, details);
+  getLogger(req).info?.(`[ADMIN AUDIT] ${admin?.email || "?"}: ${action}`, details);
 };
 
 // ----------- USER/PLAN/TASK MANAGEMENT -----------
@@ -41,13 +66,22 @@ export const loginAdmin = (req, res) => {
     password === process.env.ADMIN_PASSWORD &&
     secret === process.env.ADMIN_SECRET_KEY
   ) {
-    const token = signAdminJwt();
-    return res.json({ success: true, message: "Admin authenticated", token });
+    const token = signAdminJwt({
+      email,
+      name: "Admin",
+    });
+    setAdminAuthCookie(res, token);
+    return res.json({ success: true, message: "Admin authenticated" });
   }
   res.status(401).json({ error: "Invalid credentials" });
 };
 
-export const listAllUsers = async (_req, res) => {
+export const logoutAdmin = (_req, res) => {
+  clearAdminAuthCookie(res);
+  return res.json({ success: true, message: "Logged out" });
+};
+
+export const listAllUsers = async (req, res) => {
   try {
     const users = await User.find({}, "name email plan slug _id createdAt planExpiresAt planStartedAt signupIp signinIpHistory");
     const now = new Date();
@@ -64,7 +98,7 @@ export const listAllUsers = async (_req, res) => {
     );
     res.json(updatedUsers);
   } catch (err) {
-    req.log.error("listAllUsers error:", err);
+    getLogger(req).error?.("listAllUsers error:", err);
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
@@ -107,7 +141,7 @@ export const deleteUser = async (req, res) => {
       if (task.attachments?.length > 0) {
         for (const file of task.attachments) {
           try { await cloudinary.v2.uploader.destroy(file.public_id); }
-          catch (err) { req.log.error("Cloudinary delete error:", err); }
+          catch (err) { getLogger(req).error?.("Cloudinary delete error:", err); }
         }
       }
       if (task.workroomId) {
@@ -118,18 +152,18 @@ export const deleteUser = async (req, res) => {
     await Task.updateMany({ applicants: id }, { $pull: { applicants: id } });
     if (user.avatar?.public_id) {
       try { await cloudinary.v2.uploader.destroy(user.avatar.public_id); }
-      catch (err) { req.log.error("Cloudinary avatar delete error:", err); }
+      catch (err) { getLogger(req).error?.("Cloudinary avatar delete error:", err); }
     }
     await User.findByIdAndDelete(id);
 
     res.json({ message: "User and related data deleted successfully" });
   } catch (err) {
-    req.log.error("Error deleting user:", err);
+    getLogger(req).error?.("Error deleting user:", err);
     res.status(500).json({ error: "Failed to delete user" });
   }
 };
 
-export const listAllTasks = async (_req, res) => {
+export const listAllTasks = async (req, res) => {
   try {
     const tasks = await Task.find()
       .populate("createdBy", "name email plan slug")
@@ -139,7 +173,7 @@ export const listAllTasks = async (_req, res) => {
       .select("title description category price deadline status flagged createdBy selectedApplicant applicants attachments workroomId createdAt updatedAt");
     res.json(tasks);
   } catch (err) {
-    req.log.error("Error fetching tasks:", err);
+    getLogger(req).error?.("Error fetching tasks:", err);
     res.status(500).json({ error: "Failed to fetch tasks" });
   }
 };
@@ -168,17 +202,17 @@ export const deleteTask = async (req, res) => {
     if (task.attachments?.length > 0) {
       for (const file of task.attachments) {
         try { await cloudinary.v2.uploader.destroy(file.public_id); }
-        catch (err) { req.log.error("Cloudinary delete error:", err); }
+        catch (err) { getLogger(req).error?.("Cloudinary delete error:", err); }
       }
     }
     if (task.workroomId) {
       try { await WorkroomMessages.findOneAndDelete({ workroomId: task.workroomId }); }
-      catch (err) { req.log.error("WorkroomMessages delete error:", err); }
+      catch (err) { getLogger(req).error?.("WorkroomMessages delete error:", err); }
     }
     await Task.findByIdAndDelete(id);
     res.json({ message: "Task and related data deleted successfully" });
   } catch (err) {
-    req.log.error("Error deleting task:", err);
+    getLogger(req).error?.("Error deleting task:", err);
     res.status(500).json({ error: "Failed to delete task" });
   }
 };
@@ -212,7 +246,7 @@ export const setUserPlan = async (req, res) => {
     await user.save();
     res.json({ success: true, plan: user.plan, planExpiresAt: user.planExpiresAt });
   } catch (err) {
-    req.log.error("setUserPlan error:", err);
+    getLogger(req).error?.("setUserPlan error:", err);
     res.status(500).json({ error: "Failed to set user plan" });
   }
 };
@@ -235,7 +269,7 @@ export const listAllTickets = async (req, res) => {
     ]);
     res.json({ tickets, total });
   } catch (err) {
-    req.log.error("listAllTickets error:", err);
+    getLogger(req).error?.("listAllTickets error:", err);
     res.status(500).json({ error: "Failed to fetch tickets" });
   }
 };
@@ -257,9 +291,9 @@ export const replyToTicketAdmin = async (req, res) => {
     const { text } = req.body;
     const files = Array.isArray(req.files) ? req.files : [];
     const author = {
-      _id: req.admin._id,
+      _id: mongoose.Types.ObjectId.isValid(req.admin?._id) ? req.admin._id : undefined,
       role: "admin",
-      name: req.admin.name,
+      name: req.admin?.name || "Admin",
       avatar: req.admin.avatar || ""
     };
     const comment = { author, text, files: [], createdAt: new Date() };
@@ -305,13 +339,17 @@ export const answerQuestionAdmin = async (req, res) => {
     if (!answer || answer.trim().length < 8) {
       return res.status(400).json({ error: "Answer too short" });
     }
-    const question = await HelpQuestion.findByIdAndUpdate(
-      id,
-      { answer, status: "answered", answeredBy: req.admin._id, answeredAt: new Date() },
-      { new: true }
-    );
+    const update = {
+      answer,
+      status: "answered",
+      answeredAt: new Date(),
+    };
+    if (mongoose.Types.ObjectId.isValid(req.admin?._id)) {
+      update.answeredBy = req.admin._id;
+    }
+    const question = await HelpQuestion.findByIdAndUpdate(id, update, { new: true });
     // Audit log
-    await logAdminAction(req.admin, "ANSWER_HELP_QUESTION", { questionId: id, answer });
+    await logAdminAction(req, req.admin, "ANSWER_HELP_QUESTION", { questionId: id, answer });
     res.json({ question });
   } catch (err) {
     res.status(500).json({ error: "Failed to answer question" });
@@ -330,7 +368,7 @@ export const toggleShowOnHelpPage = async (req, res) => {
       { showOnHelpPage: !!show },
       { new: true }
     );
-    await logAdminAction(req.admin, "TOGGLE_SHOW_ON_HELP_PAGE", { questionId: id, show: !!show });
+    await logAdminAction(req, req.admin, "TOGGLE_SHOW_ON_HELP_PAGE", { questionId: id, show: !!show });
     res.json({ question: q });
   } catch (e) {
     res.status(500).json({ error: "Failed to update visibility" });
@@ -352,7 +390,7 @@ export const editAnswerAdmin = async (req, res) => {
       { answer, answeredAt: new Date() },
       { new: true }
     );
-    await logAdminAction(req.admin, "EDIT_HELP_QUESTION_ANSWER", { questionId: id, answer });
+    await logAdminAction(req, req.admin, "EDIT_HELP_QUESTION_ANSWER", { questionId: id, answer });
     res.json({ question: q });
   } catch (e) {
     res.status(500).json({ error: "Failed to edit answer" });

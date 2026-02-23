@@ -117,7 +117,7 @@ export default function ChooseMode() {
       if (t?.closest?.('[contenteditable="true"]') || ["INPUT", "TEXTAREA", "SELECT"].includes(t?.tagName)) return;
       const k = e?.key?.toLowerCase?.();
       if (k === "1") startExit("/home");
-      if (k === "2") startExit("/sponsorshiphome");
+      if (k === "2") startExit("/sponsorship-mode");
       if (k === "3") startExit("/intellectuals");
     };
     window.addEventListener("keydown", onKey);
@@ -189,16 +189,16 @@ export default function ChooseMode() {
       <FullscreenLoader visible={showLoader} label="Preparing your workspace…" />
       <motion.main
         key="choose-mode"
-        className="relative min-h-screen overflow-hidden bg-[#0A0A10] text-white"
+        className="relative min-h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans"
         variants={pageFadeSlide}
         initial="initial"
         animate={exitingTo ? "exit" : "animate"}
         onAnimationComplete={handleAnimationComplete}
         ref={containerRef}
       >
-        {/* Enterprise background (no grid/stars). Soft radial tints. */}
+        {/* Subtle top light gradient */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-x-0 top-0 h-[40vh] bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.12),transparent_60%)]" />
+          <div className="absolute inset-x-0 top-0 h-[40vh] bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.08),transparent_60%)]" />
         </div>
 
         {/* Top header bar — brand left, greeting right (no Back button) */}
@@ -208,42 +208,28 @@ export default function ChooseMode() {
             <MotionLogo onClick={() => navigate("/")} />
           </React.Suspense>
 
-          {/* Greeting capsule (refined, same position & size) */}
+          {/* Greeting capsule (refined light mode) */}
           <div className="relative">
             <div
               className={[
-                "relative z-10 flex items-center gap-3 rounded-2xl",
-                // improved border & glow
-                "border border-fuchsia-400/20 bg-gradient-to-r from-fuchsia-500/25 via-purple-600/20 to-sky-500/25",
-                // softer glass effect + subtle inner light
-                "px-3.5 py-2 backdrop-blur-xl shadow-[0_8px_28px_-12px_rgba(0,0,0,0.65)] ring-1 ring-fuchsia-400/10",
-                "transition-all duration-300 hover:shadow-[0_12px_35px_-15px_rgba(168,85,247,0.4)] hover:ring-fuchsia-400/20",
+                "relative z-10 flex items-center gap-3 rounded-full",
+                "border border-slate-200 bg-white shadow-sm",
+                "px-4 py-2 ring-1 ring-slate-100",
+                "transition-all duration-300 hover:shadow-md hover:ring-blue-100",
               ].join(" ")}
             >
-              {/* glowing orb icon */}
-              <div className="relative grid h-6 w-6 place-items-center rounded-full border border-white/20 bg-white/10 overflow-hidden">
-                {/* subtle inner pulse light */}
-                <span className="absolute inset-0 bg-gradient-to-br from-fuchsia-400/40 via-purple-500/40 to-transparent opacity-80 blur-[6px]" />
-                <span className="relative h-3 w-3 rounded-full bg-white/85 shadow-[0_0_6px_rgba(255,255,255,0.6)]" aria-hidden="true" />
+              {/* glowing orb icon (subtle blue) */}
+              <div className="relative grid h-6 w-6 place-items-center rounded-full border border-blue-100 bg-blue-50 overflow-hidden">
+                <span className="relative h-2.5 w-2.5 rounded-full bg-blue-500 shadow-sm" aria-hidden="true" />
               </div>
 
               {/* greeting text */}
-              <div className="hidden sm:block text-sm font-medium text-white/90 tracking-wide">
+              <div className="hidden sm:block text-sm font-medium text-slate-700 tracking-wide">
                 {`${greetState.label}, ${firstNameOnly(me?.name || me?.username || "there")}`}{" "}
                 <span aria-hidden>👋</span>
               </div>
 
             </div>
-
-            {/* refined purple aura behind pill */}
-            <div
-              className="absolute -inset-2 -z-0 rounded-3xl blur-[6px]"
-              style={{
-                background:
-                  "radial-gradient(45% 75% at 80% 50%, rgba(168,85,247,0.35), rgba(110,40,200,0.15), transparent)",
-              }}
-              aria-hidden="true"
-            />
           </div>
 
         </div>
@@ -257,10 +243,10 @@ export default function ChooseMode() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-[clamp(2rem,5vw,2.9rem)] font-bold"
+              className="text-[clamp(2.5rem,5vw,3.5rem)] font-extrabold tracking-tight text-slate-900"
             >
               Choose your{" "}
-              <span className="bg-gradient-to-r from-fuchsia-300 via-purple-200 to-sky-300 bg-clip-text text-transparent">
+              <span className="text-blue-600">
                 mode
               </span>
             </motion.h1>
@@ -269,7 +255,7 @@ export default function ChooseMode() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.05 }}
-              className="mt-3 max-w-2xl text-white/70"
+              className="mt-4 max-w-2xl text-lg text-slate-600 leading-relaxed"
             >
               Three focused paths. No clutter. Decide and dive in.
             </motion.p>
@@ -279,13 +265,13 @@ export default function ChooseMode() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.6 }}
-              className="mt-2 text-white/60"
+              className="mt-3 text-slate-500 font-medium"
             >
               <span className="text-sm">Empowering creators with certainty.</span>
             </motion.div>
 
             {/* Tiles */}
-            {/* <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3"> */} 
+            {/* <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3"> */}
             <div className="mt-10 grid grid-cols-1 gap-1 md:grid-cols-2 justify-center place-items-center">
               <Suspense fallback={<SkeletonTile />}>
                 <ActionTile
@@ -299,7 +285,7 @@ export default function ChooseMode() {
                   ]}
                   onPress={() => startExit("/home")}
                   onHoverPrefetch={prefetchHome}
-                  gradient="from-fuchsia-600/25 via-purple-600/10 to-sky-500/20"
+                  gradient="from-blue-100/50 via-slate-50 to-white"
                   reduceMotion={reduceMotion}
                   smallBlurPx={smallBlurPx}
                   hoverNone={hoverNone}
@@ -317,10 +303,9 @@ export default function ChooseMode() {
                     "Fast outreach tools",
                     "Clear deliverables",
                   ]}
-                  onPress={() => startExit("/sponsorshiphome")}
+                  onPress={() => startExit("/sponsorship-mode")}
                   onHoverPrefetch={prefetchSponsor}
-                  gradient="from-fuchsia-600/25 via-purple-600/10 to-sky-500/20" //pinkish
-                  // gradient="from-rose-600/25 via-pink-600/10 to-orange-500/20" orangish 
+                  gradient="from-blue-100/50 via-slate-50 to-white"
                   reduceMotion={reduceMotion}
                   smallBlurPx={smallBlurPx}
                   hoverNone={hoverNone}
@@ -355,27 +340,28 @@ export default function ChooseMode() {
 
           {/* Inspirational brand quote section */}
           <section className="relative z-20 mx-auto mt-12 max-w-6xl px-6 pb-24">
-            <div className="border-t border-white/10 pt-10">
+            <div className="border-t border-slate-200 pt-10">
               <div
                 className="relative mx-auto max-w-3xl text-center"
                 style={{ contentVisibility: "auto", containIntrinsicSize: "250px" }}
               >
-                <div aria-live="polite">
-                  <AnimatePresence>
+                <div aria-live="polite" className="relative h-[4.5rem] md:h-[2rem]">
+                  <AnimatePresence mode="wait" initial={false}>
                     <motion.blockquote
                       key={qIndex}
-                      initial={{ opacity: 0, y: 6 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.45 }}
-                      className="text-balance text-2xl font-semibold leading-relaxed text-white/90 md:text-3xl"
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.45, ease: "easeOut" }}
+                      className="absolute inset-0 flex items-center justify-center text-balance text-2xl font-medium leading-relaxed text-slate-700 md:text-3xl italic"
                     >
                       “{brandQuotes[qIndex]}”
                     </motion.blockquote>
                   </AnimatePresence>
                 </div>
-                <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                <div className="mt-3 text-sm text-white/50">Designed with care • Cyphire</div>
+
+                <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+                <div className="mt-3 text-sm text-slate-500">Designed with care • Cyphire</div>
               </div>
             </div>
           </section>
@@ -383,7 +369,7 @@ export default function ChooseMode() {
 
 
         {/* Bottom ambient */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[18rem] bg-[radial-gradient(ellipse_at_bottom,rgba(14,165,233,0.12),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[18rem] bg-[radial-gradient(ellipse_at_bottom,rgba(59,130,246,0.05),transparent_60%)]" />
       </motion.main>
     </AnimatePresence>
   );
@@ -392,11 +378,11 @@ export default function ChooseMode() {
 /** Skeleton while lazy tiles load */
 function SkeletonTile() {
   return (
-    <div className="h-[220px] rounded-3xl border border-white/10 bg-white/5 p-6">
-      <div className="h-5 w-24 rounded bg-white/10" />
-      <div className="mt-4 h-4 w-48 rounded bg-white/10" />
-      <div className="mt-2 h-4 w-40 rounded bg-white/10" />
-      <div className="mt-6 h-4 w-24 rounded bg-white/10" />
+    <div className="h-[220px] rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="h-5 w-24 rounded bg-slate-100" />
+      <div className="mt-4 h-4 w-48 rounded bg-slate-100" />
+      <div className="mt-2 h-4 w-40 rounded bg-slate-100" />
+      <div className="mt-6 h-4 w-24 rounded bg-slate-100" />
     </div>
   );
 }

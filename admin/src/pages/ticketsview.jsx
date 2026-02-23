@@ -14,10 +14,7 @@ export default function TicketsView() {
 
   const fetchTickets = async () => {
     setLoading(true);
-    const token = localStorage.getItem("admin-token");
-    const res = await fetch(`${API_BASE}/api/admin/tickets`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch(`${API_BASE}/api/admin/tickets`);
     const data = await res.json();
     setTickets(Array.isArray(data.tickets) ? data.tickets : []);
     setLoading(false);
@@ -26,23 +23,18 @@ export default function TicketsView() {
   useEffect(() => { fetchTickets(); }, []);
 
   const openTicket = async (id) => {
-    const token = localStorage.getItem("admin-token");
-    const res = await fetch(`${API_BASE}/api/help/tickets/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch(`${API_BASE}/api/admin/tickets/${id}`);
     const data = await res.json();
     setActiveTicket(data.ticket);
   };
 
   const sendReply = async (ticketId) => {
     setReplying(true);
-    const token = localStorage.getItem("admin-token");
     const formData = new FormData();
     formData.append("text", reply);
     replyFiles.forEach(f => formData.append("files", f));
-    await apiFetch(`${API_BASE}/api/help/tickets/${ticketId}/comments`, {
+    await apiFetch(`${API_BASE}/api/admin/tickets/${ticketId}/reply`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
     openTicket(ticketId); // Refresh chat
