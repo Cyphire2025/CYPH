@@ -7,19 +7,28 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/userModel.js";
 
-// Destructure after .env loaded
-const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } = process.env;
+const trimSlash = (url = "") => String(url || "").replace(/\/+$/, "");
+const serverBase =
+  trimSlash(process.env.SERVER_URL) ||
+  trimSlash(process.env.RENDER_EXTERNAL_URL) ||
+  "http://localhost:5000";
+const callbackUrl =
+  trimSlash(process.env.GOOGLE_CALLBACK_URL) || `${serverBase}/api/auth/google/callback`;
 
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_CALLBACK_URL) {
-  console.warn("⚠️ Google OAuth DISABLED: missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GOOGLE_CALLBACK_URL");
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.warn("Google OAuth DISABLED: missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET");
 } else {
-  console.log("✅ Google OAuth enabled");
+  console.log("Google OAuth enabled");
+  console.log("Google callback URL:", callbackUrl);
+
   passport.use(
     new GoogleStrategy(
       {
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: GOOGLE_CALLBACK_URL,
+        callbackURL: callbackUrl,
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {

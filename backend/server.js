@@ -111,7 +111,13 @@ app.use(
 
         // Fonts & images
         "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
-        "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+        "img-src": [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://res.cloudinary.com",
+          "https://www.transparenttextures.com",
+        ],
 
         // Connect: include your API + Razorpay + blob; also WS for sockets
         "connect-src": [
@@ -120,6 +126,8 @@ app.use(
           "https://api.razorpay.com",
           "https://cyphire.onrender.com",
           "wss://cyphire.onrender.com",
+          "https://cyph-dyn8.onrender.com",
+          "wss://cyph-dyn8.onrender.com",
         ],
 
         "worker-src": ["'self'", "blob:"],

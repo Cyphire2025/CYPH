@@ -37,7 +37,7 @@ import {
 } from "../utils/riskEngine.js";
 import { sendOtpSms } from "../utils/otpService.js";
 
-const FE = process.env.FRONTEND_URL || "http://localhost:5173";
+const trimSlash = (url = "") => String(url || "").replace(/\/+$/, "");
 
 // Helper: get real client IP (trusts reverse proxy headers)
 const getClientIp = (req) =>
@@ -61,7 +61,7 @@ function decodeState(str) {
     return null;
   }
 }
-const getFrontendBase = () => process.env.FRONTEND_URL || "http://localhost:5173";
+const getFrontendBase = () => trimSlash(process.env.FRONTEND_URL) || "http://localhost:5173";
 
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
 const normalizePhone = (phone = "") => phone.trim();
