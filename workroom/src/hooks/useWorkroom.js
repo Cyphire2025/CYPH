@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import io from "socket.io-client";
-import { apiFetch } from "../lib/fetch";
+import { apiFetch, API_BASE } from "../lib/fetch";
 import {
   MAX_FILE_MB,
   getSenderId,
 } from "../components/workroom/messageUtils";
 
-const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 const TYPING_IDLE_MS = 900;
 const REMOTE_TYPING_VISIBLE_MS = 1400;
 

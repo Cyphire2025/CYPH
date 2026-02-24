@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
-import { apiFetch } from "../lib/fetch";
+import { apiFetch, API_BASE } from "../lib/fetch";
 import Aurora from "../components/workroom/Aurora";
-
-const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
 const parseJsonSafe = async (res) => {
   const ct = res.headers.get("content-type") || "";
