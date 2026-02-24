@@ -167,6 +167,8 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:5173",
   "http://127.0.0.1:5174",
   "http://127.0.0.1:5175",
+  "https://cyphire.vercel.app",
+  "https://cyphirechat.vercel.app",
   "https://cyphire-frontend.vercel.app",
   "https://cyphire-workroom.vercel.app",
   "https://cyphire-admin.vercel.app",
@@ -174,7 +176,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const VERCEL_PREVIEW_PROJECTS = new Set(
   (process.env.CORS_VERCEL_PREVIEW_PROJECTS ||
-    "cyphire-frontend,cyphire-workroom,cyphire-admin")
+    "cyphire,cyphirechat,cyphire-admin,cyphire-frontend,cyphire-workroom")
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean)

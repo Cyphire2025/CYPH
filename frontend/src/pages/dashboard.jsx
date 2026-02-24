@@ -49,7 +49,7 @@ const WORKROOM_BASE = (() => {
     return `${window.location.protocol}//${host}:5174`;
   }
 
-  return "https://cyphire-workroom.vercel.app";
+  return "https://cyphirechat.vercel.app";
 })();
 
 /* =========================================================
