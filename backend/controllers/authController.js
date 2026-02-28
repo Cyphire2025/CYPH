@@ -46,9 +46,21 @@ const getClientIp = (req) =>
   req.ip;
 
 function sanitizeNextPath(next) {
+  const allowedPaths = new Set(["/", "/choose", "/dashboard", "/profile", "/signin", "/login"]);
   if (typeof next !== "string") return "/";
-  if (next.startsWith("/") && !next.startsWith("//") && !next.includes("..")) return next;
-  return "/";
+
+  const candidate = next.trim();
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("..")) {
+    return "/";
+  }
+
+  try {
+    const parsed = new URL(candidate, "https://cyphire.local");
+    if (!allowedPaths.has(parsed.pathname)) return "/";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/";
+  }
 }
 
 function encodeState(obj) {
@@ -387,8 +399,10 @@ export const requestEmailOtp = async (req, res, next) => {
 
     await user.save();
 
-    // TODO: plug in Resend or your email provider here
-    console.log(`[DEV ONLY] Email OTP for ${normalizedEmail}:`, otp);
+    if (process.env.NODE_ENV !== "production") {
+      const safeEmail = String(normalizedEmail).replace(/[\r\n]/g, "");
+      console.log("[DEV ONLY] Email OTP for:", safeEmail, otp);
+    }
 
     res.json({
       ok: true,
@@ -747,8 +761,9 @@ export const loginRequestOtp = async (req, res, next) => {
     await user.save();
 
     if (isEmail) {
-      // TODO: integrate email provider (Resend). For now, console in dev.
-      console.log(`[DEV ONLY] Login email OTP for ${user.email}:`, otp);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[DEV ONLY] Login email OTP for ${user.email}:`, otp);
+      }
     } else {
       try {
         await sendOtpSms({
@@ -907,8 +922,9 @@ export const requestPasswordReset = async (req, res, next) => {
 
     await user.save();
 
-    // TODO: integrate real email provider; for now log to console
-    console.log(`[DEV ONLY] Password reset OTP for ${user.email}:`, otp);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[DEV ONLY] Password reset OTP for ${user.email}:`, otp);
+    }
 
     res.json({ ok: true, message: "If this email exists, a reset OTP has been sent." });
   } catch (err) {

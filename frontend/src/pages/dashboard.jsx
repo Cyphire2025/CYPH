@@ -29,6 +29,7 @@ import {
   Eye,
 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeMediaUrl, safeSlug } from "../utils/safeUrl";
 
 /**
  * Backend + Razorpay
@@ -1111,8 +1112,11 @@ export default function DashboardPage() {
             {task.applicants.map((appl, j) => {
               const a = typeof appl === "object" ? appl : { _id: appl };
               const name = a.name || "User";
-              const avatar = a.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
-              const profile = a.slug || a._id;
+              const avatar = safeMediaUrl(
+                a.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`,
+                "/user-avatar.png"
+              );
+              const profile = safeSlug(a.slug || "", "") || safeSlug(a._id || "", "");
               const isThisSelected = !!selectedId && sameId(selectedId, a._id);
               return (
                 <div key={`${toId(a._id)}-${j}`} className="flex items-center justify-between bg-slate-50 border border-slate-100 px-4 py-2 rounded-lg">
@@ -1123,7 +1127,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Link to={`/u/${profile}`} className={`text-sm hover:underline font-medium ${theme.accentText}`}>
+                    <Link to={profile ? `/u/${profile}` : "/profile"} className={`text-sm hover:underline font-medium ${theme.accentText}`}>
                       View Profile
                     </Link>
                     {!task.selectedApplicant ? (

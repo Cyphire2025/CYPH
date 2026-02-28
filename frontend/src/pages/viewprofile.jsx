@@ -19,6 +19,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeMediaUrl, safeSlug } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -136,8 +137,9 @@ const TextField = ({ label, value }) => {
 };
 
 const MediaTile = ({ media }) => {
-  const url = media?.url || "";
-  const isVideo = (media?.contentType || "").startsWith("video/") || /\.(mp4|webm|ogg)$/i.test(url);
+  const rawUrl = media?.url || "";
+  const url = safeMediaUrl(rawUrl, "");
+  const isVideo = (media?.contentType || "").startsWith("video/") || /\.(mp4|webm|ogg)$/i.test(rawUrl);
 
   if (!url) return null;
 
@@ -164,6 +166,7 @@ const MediaTile = ({ media }) => {
 
 export default function ViewProfilePage() {
   const { slug } = useParams();
+  const safeRouteSlug = safeSlug(slug, "");
   const navigate = useNavigate();
 
   const Nav = useMemo(() => {
@@ -194,7 +197,7 @@ export default function ViewProfilePage() {
       setLoading(true);
       setErr("");
       try {
-        const res = await apiFetch(`${API_BASE}/api/users/slug/${slug}/public`, {
+        const res = await apiFetch(`${API_BASE}/api/users/slug/${safeRouteSlug}/public`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
@@ -226,12 +229,13 @@ export default function ViewProfilePage() {
       }
     };
 
-    if (slug) load();
+    if (safeRouteSlug) load();
+    else setErr("Invalid profile URL.");
 
     return () => {
       alive = false;
     };
-  }, [slug]);
+  }, [safeRouteSlug]);
 
   const pp = profile?.professionalProfile || {};
   const domainDetails = pp?.domainDetails && typeof pp.domainDetails === "object" ? pp.domainDetails : {};
@@ -256,12 +260,12 @@ export default function ViewProfilePage() {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
 
-          {profile?.slug ? (
+          {safeSlug(profile?.slug || "", "") ? (
             <Link
-              to={`/u/${profile.slug}`}
+              to={`/u/${safeSlug(profile?.slug || "", "")}`}
               className="text-xs font-medium text-blue-700 hover:text-blue-800"
             >
-              /u/{profile.slug}
+              /u/{safeSlug(profile?.slug || "", "")}
             </Link>
           ) : null}
         </div>
@@ -281,9 +285,9 @@ export default function ViewProfilePage() {
               <InfoCard title="Profile" icon={UserRound}>
                 <div className="flex flex-col items-center text-center">
                   <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                    {profile.avatar ? (
+                    {safeMediaUrl(profile.avatar || "", "") ? (
                       <img
-                        src={profile.avatar}
+                        src={safeMediaUrl(profile.avatar || "", "")}
                         className="h-full w-full object-cover"
                         alt={`${profile.name || "User"} avatar`}
                         referrerPolicy="no-referrer"

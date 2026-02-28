@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Eye, Trash2 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeSlug } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const API_FRONTEND_BASE = import.meta.env.VITE_FRONTEND_BASE || "http://localhost:5173";
@@ -131,9 +132,10 @@ export default function UsersView() {
 
   // View profile
   const handleViewProfile = (slug) => {
-   if (!slug) return;
-  window.open(`${API_FRONTEND_BASE}/u/${slug}`, "_blank");
-};
+    const safe = safeSlug(slug, "");
+    if (!safe) return;
+    window.open(`${API_FRONTEND_BASE}/u/${safe}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div>

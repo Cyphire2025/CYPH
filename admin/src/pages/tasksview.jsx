@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeSlug } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 const FRONTEND_BASE = import.meta.env.VITE_FRONTEND_BASE || "http://localhost:5173";
@@ -69,8 +70,9 @@ export default function TasksView() {
   };
 
   const openProfile = (slug) => {
-    if (!slug) return;
-    window.open(`${FRONTEND_BASE}/u/${slug}`, "_blank");
+    const safe = safeSlug(slug, "");
+    if (!safe) return;
+    window.open(`${FRONTEND_BASE}/u/${safe}`, "_blank", "noopener,noreferrer");
   };
 
   const filtered = tasks.filter(
@@ -158,7 +160,7 @@ export default function TasksView() {
                             <p className="text-xs text-white/50">{a.email}</p>
                           </div>
                           <button
-                            onClick={() => window.open(`http://localhost:5173/u/${a.slug}`, "_blank")}
+                            onClick={() => openProfile(a.slug)}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-gradient-to-r from-sky-500/20 to-cyan-500/20 border border-sky-400/30 text-sky-200 hover:from-sky-500/30 hover:to-cyan-500/30"
                           >
                             <Eye size={14} /> View Profile

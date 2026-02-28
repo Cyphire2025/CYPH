@@ -97,5 +97,20 @@ const IntellectualApplicationSchema = new mongoose.Schema({
 
 // Compound index for admin dashboards
 IntellectualApplicationSchema.index({ category: 1, status: 1, createdAt: -1 });
+IntellectualApplicationSchema.index(
+  {
+    "profile.fullName": "text",
+    "profile.socials.linkedin": "text",
+    "profile.socials.twitter": "text",
+  },
+  {
+    name: "profile_text_search_idx",
+    weights: {
+      "profile.fullName": 10,
+      "profile.socials.linkedin": 5,
+      "profile.socials.twitter": 5,
+    },
+  }
+);
 
 export default mongoose.model("IntellectualApplication", IntellectualApplicationSchema);

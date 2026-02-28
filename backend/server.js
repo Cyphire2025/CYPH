@@ -14,7 +14,6 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import passport from "passport";
 import { Server } from "socket.io";
-import crypto from "crypto";
 
 // metrics & logging (optional but kept production-friendly)
 import client from "prom-client";
@@ -30,7 +29,7 @@ import Task from "./models/taskModel.js";
 import User from "./models/userModel.js";
 
 // CSRF middleware from your utils (double-submit validator)
-import { verifyDoubleSubmitCsrf } from "./utils/csrfMiddleware.js";
+import { ensureCsrfCookie, verifyDoubleSubmitCsrf } from "./utils/csrfMiddleware.js";
 
 // Routes (keep all existing)
 import authRoutes from "./routes/authRoutes.js";
@@ -54,6 +53,8 @@ const PORT = process.env.PORT || 5000;
 const IS_PROD = process.env.NODE_ENV === "production";
 
 app.set("trust proxy", 1); // required behind Render/Cloudflare
+app.disable("x-powered-by");
+app.set("etag", false);
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Structured logging (pino) + HTTP trace IDs
@@ -93,58 +94,39 @@ app.use((req, res, next) => {
 // ───────────────────────────────────────────────────────────────────────────────
 app.use(
   helmet({
+    frameguard: { action: "deny" },
+    noSniff: true,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: {
+      maxAge: 63072000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    permissionsPolicy: {
+      features: {
+        geolocation: [],
+        camera: [],
+        microphone: [],
+      },
+    },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: { policy: "same-origin" },
     contentSecurityPolicy: {
-      useDefaults: true,
+      useDefaults: false,
       directives: {
         "default-src": ["'self'"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'"],
+        "img-src": ["'self'", "data:", "https://res.cloudinary.com", "https://ui-avatars.com"],
+        "connect-src": ["'self'"],
         "base-uri": ["'self'"],
+        "form-action": ["'self'"],
         "object-src": ["'none'"],
         "frame-ancestors": ["'none'"],
-
-        // Scripts: app + Razorpay; allow wasm eval for decoders & three.js loaders
-        "script-src": ["'self'", "https://checkout.razorpay.com", "'wasm-unsafe-eval'", "'unsafe-eval'"],
-
-        // Styles: Google Fonts requires 'unsafe-inline' for styles
-        "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-
-        // Fonts & images
-        "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
-        "img-src": [
-          "'self'",
-          "data:",
-          "blob:",
-          "https://res.cloudinary.com",
-          "https://www.transparenttextures.com",
-        ],
-
-        // Connect: include your API + Razorpay + blob; also WS for sockets
-        "connect-src": [
-          "'self'",
-          "blob:",
-          "https://api.razorpay.com",
-          "https://cyphire.onrender.com",
-          "wss://cyphire.onrender.com",
-          "https://cyph-dyn8.onrender.com",
-          "wss://cyph-dyn8.onrender.com",
-        ],
-
-        "worker-src": ["'self'", "blob:"],
-        "child-src": ["'self'", "blob:"],
-        "media-src": ["'self'", "data:", "blob:"],
-        "frame-src": ["https://*.razorpay.com"],
-        "upgrade-insecure-requests": [],
       },
     },
   })
 );
-
-// helps you confirm CSP actually comes from server
-app.use((_, res, next) => {
-  res.setHeader("X-Cyphire-Server-CSP", "v2");
-  next();
-});
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Core middleware
@@ -155,60 +137,47 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use("/uploads", express.static("uploads"));
+app.use(
+  "/uploads",
+  express.static("uploads", {
+    etag: false,
+    lastModified: false,
+    cacheControl: false,
+  })
+);
 
 // ───────────────────────────────────────────────────────────────────────────────
 // CORS for Vercel (prod + previews) and local dev
 // ───────────────────────────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = new Set([
+const parseOriginList = (value = "") =>
+  String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((origin) => origin.replace(/\/+$/, ""));
+
+const PROD_ORIGINS = [
+  ...parseOriginList(process.env.CORS_ALLOWED_ORIGINS),
+  ...parseOriginList(process.env.FRONTEND_URL),
+  ...parseOriginList(process.env.ADMIN_FRONTEND_URL),
+  ...parseOriginList(process.env.WORKROOM_FRONTEND_URL),
+];
+
+const DEV_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
   "http://127.0.0.1:5173",
   "http://127.0.0.1:5174",
   "http://127.0.0.1:5175",
-  "https://cyphire.vercel.app",
-  "https://cyphirechat.vercel.app",
-  "https://cyphire-frontend.vercel.app",
-  "https://cyphire-workroom.vercel.app",
-  "https://cyphire-admin.vercel.app",
-]);
+];
 
-const VERCEL_PREVIEW_PROJECTS = new Set(
-  (process.env.CORS_VERCEL_PREVIEW_PROJECTS ||
-    "cyphire,cyphirechat,cyphire-admin,cyphire-frontend,cyphire-workroom")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean)
-);
+const ALLOWED_ORIGINS = new Set(IS_PROD ? PROD_ORIGINS : [...PROD_ORIGINS, ...DEV_ORIGINS]);
 
-const isTrustedVercelPreview = (origin) => {
-  try {
-    const parsed = new URL(origin);
-    if (parsed.protocol !== "https:") return false;
-    const host = parsed.hostname.toLowerCase();
-    if (!host.endsWith(".vercel.app")) return false;
-
-    const hostnameWithoutSuffix = host.slice(0, -".vercel.app".length);
-    if (!hostnameWithoutSuffix) return false;
-
-    for (const project of VERCEL_PREVIEW_PROJECTS) {
-      if (
-        hostnameWithoutSuffix === project ||
-        hostnameWithoutSuffix.startsWith(`${project}-`) ||
-        hostnameWithoutSuffix.endsWith(`.${project}`)
-      ) {
-        return true;
-      }
-    }
-    return false;
-  } catch {
-    return false;
-  }
+const isAllowedCorsOrigin = (origin) => {
+  if (!origin) return true;
+  return ALLOWED_ORIGINS.has(String(origin).replace(/\/+$/, ""));
 };
-
-const isAllowedCorsOrigin = (origin) =>
-  ALLOWED_ORIGINS.has(origin) || isTrustedVercelPreview(origin);
 
 app.use((_, res, next) => {
   // better cache behavior with varying origins
@@ -216,28 +185,39 @@ app.use((_, res, next) => {
   next();
 });
 
-app.use(
-  cors({
-    origin(origin, cb) {
-      if (!origin) return cb(null, true); // server-to-server / curl
-      if (isAllowedCorsOrigin(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-CSRF-Token",
-      "X-Requested-With",
-      "Cache-Control",
-      "Pragma",
-      "If-Modified-Since",
-      "If-None-Match",
-      "X-Device-Fingerprint",
-    ],
-  })
-);
+const corsOptions = {
+  origin(origin, cb) {
+    if (isAllowedCorsOrigin(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-CSRF-Token",
+    "X-Requested-With",
+    "Cache-Control",
+    "Pragma",
+    "If-Modified-Since",
+    "If-None-Match",
+    "X-Device-Fingerprint",
+  ],
+  maxAge: 600,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
+if (IS_PROD && process.env.FORCE_HTTPS === "1") {
+  app.use((req, res, next) => {
+    if (req.secure) return next();
+    const host = req.headers.host;
+    if (!host) return res.status(400).send("Bad Request");
+    return res.redirect(308, `https://${host}${req.originalUrl || req.url}`);
+  });
+}
 
 // ───────────────────────────────────────────────────────────────────────────────
 /**
@@ -246,24 +226,16 @@ app.use(
  * This matches your double-submit strategy and works cross-site (Vercel → Render).
  */
 // ───────────────────────────────────────────────────────────────────────────────
-function ensureCsrfCookie(req, res, next) {
-  const name = "csrfToken";
-  const existing = req.cookies?.[name];
-  if (!existing || typeof existing !== "string" || existing.length < 32) {
-    const token = crypto.randomBytes(32).toString("base64url");
-    res.cookie(name, token, {
-      httpOnly: false, // SPA must read it (via /csrf-token)
-      sameSite: IS_PROD ? "none" : "lax",
-      secure: IS_PROD,
-      path: "/",
-      maxAge: 12 * 60 * 60 * 1000, // 12h
-    });
+app.use(ensureCsrfCookie);
+
+app.use((req, res, next) => {
+  if (req.path === "/csrf-token" || req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Surrogate-Control", "no-store");
   }
   next();
-}
-
-// 1) mint/refresh cookie for everyone
-app.use(ensureCsrfCookie);
+});
 
 // 2) SPA reads the token here (your frontend helper should call this)
 app.get("/csrf-token", (req, res) => {
@@ -278,9 +250,16 @@ app.use(verifyDoubleSubmitCsrf);
 // ───────────────────────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => res.send("Cyphire API up"));
 app.get("/readyz", (_req, res) => res.send("ready"));
-app.get("/metrics", async (_req, res) => {
+app.get("/metrics", async (req, res) => {
+  if (IS_PROD && process.env.ENABLE_PUBLIC_METRICS !== "1") {
+    return res.status(404).send("Not found");
+  }
+  const metricsToken = process.env.METRICS_TOKEN;
+  if (metricsToken && req.get("x-metrics-token") !== metricsToken) {
+    return res.status(401).send("Unauthorized");
+  }
   res.set("Content-Type", client.register.contentType);
-  res.end(await client.register.metrics());
+  return res.end(await client.register.metrics());
 });
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -477,9 +456,11 @@ app.set("io", io);
 app.use((err, req, res, _next) => {
   req.log?.error?.(err);
   logger.error({ err, url: req.originalUrl }, "GLOBAL ERROR");
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
-    stack: IS_PROD ? undefined : err.stack,
+  const status = Number(err?.status || 500);
+  const safeMessage = IS_PROD && status >= 500 ? "Internal Server Error" : err?.message || "Request failed";
+  res.status(status).json({
+    error: safeMessage,
+    stack: IS_PROD ? undefined : err?.stack,
   });
 });
 

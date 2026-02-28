@@ -20,6 +20,7 @@ import {
   Building2,
 } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeExternalOpen, safeHttpUrl, safeMediaUrl, safeSlug } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -495,6 +496,11 @@ export default function ProfilePage() {
   const initial = useMemo(() => {
     return (name || email || "U").trim().charAt(0).toUpperCase();
   }, [name, email]);
+  const publicSlug = safeSlug(user?.slug, "");
+  const safeAvatarUrl =
+    typeof avatarUrl === "string" && avatarUrl.startsWith("blob:")
+      ? avatarUrl
+      : safeMediaUrl(avatarUrl, "");
 
   const handleAvatarPick = (e) => {
     const f = e.target.files?.[0];
@@ -840,16 +846,16 @@ export default function ProfilePage() {
           <p className="text-slate-600 mt-2 text-lg">Build a marketplace-ready profile and showcase your best work.</p>
 
           {/* Public profile link */}
-          {user?.slug && (
+          {publicSlug && (
             <div className="mt-3 text-sm text-slate-500">
               Public profile:{" "}
               <a
-                href={`/u/${user.slug}`}
+                href={`/u/${publicSlug}`}
                 className="text-blue-600 hover:text-blue-700 font-medium underline underline-offset-2 ml-1"
                 target="_blank"
                 rel="noreferrer"
               >
-                {window.location.host}/u/{user.slug}
+                {window.location.host}/u/{publicSlug}
               </a>
             </div>
           )}
@@ -889,9 +895,9 @@ export default function ProfilePage() {
               <GlassCard className="p-6 flex flex-col items-center">
                 {/* Avatar */}
                 <div className="relative h-32 w-32 rounded-full border-4 border-slate-100 bg-slate-100 overflow-hidden flex items-center justify-center shadow-inner group">
-                  {avatarUrl ? (
+                  {safeAvatarUrl ? (
                     <img
-                      src={avatarUrl}
+                      src={safeAvatarUrl}
                       alt="Profile"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                       referrerPolicy="no-referrer"
@@ -1439,9 +1445,9 @@ export default function ProfilePage() {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="text-xl font-bold text-slate-900">{p.title}</h3>
-                              {p.link && (
+                              {safeHttpUrl(p.link || "", "") && (
                                 <a
-                                  href={/^https?:\/\//i.test(p.link) ? p.link : `https://${p.link}`}
+                                  href={safeHttpUrl(p.link || "", "#")}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="inline-flex items-center gap-1 mt-1 text-sm text-blue-600 hover:text-blue-800 hover:underline"
@@ -1462,17 +1468,19 @@ export default function ProfilePage() {
                           {Array.isArray(p.media) && p.media.length > 0 && (
                             <div className="mt-5 flex flex-wrap gap-4">
                               {p.media.map((m, j) => {
+                                const mediaUrl = safeMediaUrl(m?.url, "");
+                                if (!mediaUrl) return null;
                                 const isVideo = (m?.contentType || "").startsWith("video/");
                                 return (
                                   <div
                                     key={j}
                                     className="relative w-32 h-32 md:w-40 md:h-40 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-zoom-in"
-                                    onClick={() => window.open(m.url, '_blank')}
+                                    onClick={() => safeExternalOpen(mediaUrl)}
                                   >
                                     {isVideo ? (
-                                      <video src={m.url} className="w-full h-full object-cover" muted />
+                                      <video src={mediaUrl} className="w-full h-full object-cover" muted />
                                     ) : (
-                                      <img src={m.url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="project media" />
+                                      <img src={mediaUrl} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="project media" />
                                     )}
                                   </div>
                                 );

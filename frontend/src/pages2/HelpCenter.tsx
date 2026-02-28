@@ -8,6 +8,7 @@ import { GradientText, GlassCard, NeonButton } from "../pages/home"; // Reuse ho
 import Navbarspon from "../components/navbarsponhome.jsx";
 import Navbarhome from "../components/navbarhome.jsx";
 import Footer from "../components/footer";
+import { safeMediaUrl } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -359,11 +360,15 @@ export default function HelpCenter() {
               <div className="flex-1 min-h-[200px] max-h-[340px] overflow-y-auto space-y-3 py-2">
                 {activeTicket.comments.map((msg, idx) => (
                   <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                    {(() => {
+                      const avatarFallback = msg.author.role === "admin" ? "/admin-avatar.png" : "/user-avatar.png";
+                      const safeAvatar = safeMediaUrl(msg.author.avatar || "", avatarFallback);
+                      return (
                     <div className={classNames(
                       "flex gap-3 items-start",
                       msg.author.role === "admin" ? "flex-row-reverse text-right" : ""
                     )}>
-                      <img src={msg.author.avatar || (msg.author.role === "admin" ? "/admin-avatar.png" : "/user-avatar.png")} alt={msg.author.name} className="h-10 w-10 rounded-full border border-slate-200 object-cover bg-white" />
+                      <img src={safeAvatar} alt={msg.author.name} className="h-10 w-10 rounded-full border border-slate-200 object-cover bg-white" />
                       <div className={classNames(
                         "rounded-xl px-5 py-3 max-w-[75%] flex-1 text-sm shadow-sm",
                         msg.author.role === "admin" ? "bg-blue-50 border border-blue-100 text-slate-800" : "bg-white border border-slate-200 text-slate-800"
@@ -375,16 +380,22 @@ export default function HelpCenter() {
                         <div className="mb-1 whitespace-pre-line leading-relaxed">{msg.text}</div>
                         {msg.files && msg.files.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {msg.files.map((f, fi) => (
-                              <a key={fi} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-200 bg-slate-50 text-xs text-blue-600 hover:bg-blue-50 transition">
-                                <Star className="h-4 w-4" /> {f.original_name}
-                              </a>
-                            ))}
+                            {msg.files.map((f, fi) => {
+                              const safeFileUrl = safeMediaUrl(f.url || "", "");
+                              if (!safeFileUrl) return null;
+                              return (
+                                <a key={fi} href={safeFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-200 bg-slate-50 text-xs text-blue-600 hover:bg-blue-50 transition">
+                                  <Star className="h-4 w-4" /> {f.original_name}
+                                </a>
+                              );
+                            })}
                           </div>
                         )}
                         <div className="mt-1 text-xs text-slate-400">{new Date(msg.createdAt).toLocaleString()}</div>
                       </div>
                     </div>
+                      );
+                    })()}
                   </motion.div>
                 ))}
               </div>

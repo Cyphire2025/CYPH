@@ -4,6 +4,8 @@ import User from "../models/userModel.js";
 import cloudinary from "../utils/cloudinary.js";
 import { getPlanDurationMs, isPaidPlan } from "../utils/planConfig.js";
 
+const SAFE_SLUG_RE = /^[a-z0-9-]+$/;
+
 // --- Simple logger; swap with Winston/Sentry in production ---
 const logger = {
   info: (...args) => req.log.info("[INFO]", ...args),
@@ -432,7 +434,11 @@ export const deleteProjectMedia = async (req, res, next) => {
  */
 export const publicProfileBySlug = async (req, res, next) => {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params?.slug || "").trim().toLowerCase();
+    if (!SAFE_SLUG_RE.test(slug)) {
+      return res.status(400).json({ error: "Invalid slug" });
+    }
+
     const user = await User.findOne({ slug }).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
 

@@ -5,6 +5,7 @@ import { FaRegBell } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch } from "../lib/fetch";
+import { safeMediaUrl } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:5000";
 
@@ -106,6 +107,7 @@ export default function NavbarSponsor() {
 
   const initial = (user?.name || user?.email || "U").trim().charAt(0).toUpperCase();
   const avatarUrl = user?.avatar && typeof user.avatar === "string" ? user.avatar : null;
+  const safeAvatarUrl = safeMediaUrl(avatarUrl || "", "");
 
   // Only show 5 until expanded
   const visibleMessages = showAllMsgs ? messages : messages.slice(0, 1);
@@ -435,8 +437,8 @@ export default function NavbarSponsor() {
               aria-label="Profile"
               title={user?.name || user?.email || "Profile"}
             >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+              {safeAvatarUrl ? (
+                <img src={safeAvatarUrl} alt="Profile" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-sm font-semibold text-emerald-700">{initial}</span>
               )}
@@ -490,8 +492,8 @@ export default function NavbarSponsor() {
               aria-label="Profile"
               title={user?.name || user?.email || "Profile"}
             >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+              {safeAvatarUrl ? (
+                <img src={safeAvatarUrl} alt="Profile" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-sm font-semibold text-white/90">{initial}</span>
               )}

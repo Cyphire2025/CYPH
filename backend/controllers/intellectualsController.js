@@ -206,10 +206,68 @@ export const getApplicationById = async (req, res) => {
  */
 export const getAllApplications = async (req, res) => {
   try {
-    const all = await IntellectualApplication.find({})
+    const all = await IntellectualApplication.find({ status: "approved" })
       .sort({ createdAt: -1 })
-      .limit(100);
-    res.json(all);
+      .limit(100)
+      .lean();
+
+    const publicItems = all.map((item) => ({
+      _id: item._id,
+      category: item.category,
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      profile: {
+        fullName: item.profile?.fullName || "",
+        headline: item.profile?.headline || "",
+        bio: item.profile?.bio || "",
+        languages: Array.isArray(item.profile?.languages) ? item.profile.languages : [],
+        location: item.profile?.location || "",
+        socials: item.profile?.socials || {},
+        avatar: item.profile?.avatar
+          ? {
+            url: item.profile.avatar.url,
+            contentType: item.profile.avatar.contentType || "",
+          }
+          : null,
+      },
+      professor: item.professor
+        ? {
+          institution: item.professor.institution || "",
+          department: item.professor.department || "",
+          designation: item.professor.designation || "",
+          expertise: Array.isArray(item.professor.expertise) ? item.professor.expertise : [],
+          publications: item.professor.publications || 0,
+          googleScholar: item.professor.googleScholar || "",
+        }
+        : undefined,
+      influencer: item.influencer
+        ? {
+          niches: Array.isArray(item.influencer.niches) ? item.influencer.niches : [],
+          platforms: Array.isArray(item.influencer.platforms) ? item.influencer.platforms : [],
+        }
+        : undefined,
+      industry_expert: item.industry_expert
+        ? {
+          company: item.industry_expert.company || "",
+          role: item.industry_expert.role || "",
+          yearsExperience: item.industry_expert.yearsExperience || 0,
+          domains: Array.isArray(item.industry_expert.domains) ? item.industry_expert.domains : [],
+          certifications: Array.isArray(item.industry_expert.certifications)
+            ? item.industry_expert.certifications
+            : [],
+        }
+        : undefined,
+      coach: item.coach
+        ? {
+          focusAreas: Array.isArray(item.coach.focusAreas) ? item.coach.focusAreas : [],
+          sessionsOffered: Array.isArray(item.coach.sessionsOffered) ? item.coach.sessionsOffered : [],
+          priceHint: item.coach.priceHint || 0,
+        }
+        : undefined,
+    }));
+
+    res.json(publicItems);
   } catch (err) {
     req.log.error("getAllApplications error:", err.message);
     res.status(500).json({ error: err.message });
@@ -224,30 +282,29 @@ export const adminListApplications = async (req, res) => {
   try {
     const { status, category, q, page = 1, limit = 20 } = req.query;
     const where = {};
+    const qText = typeof q === "string" ? q.trim().slice(0, 120) : "";
     if (status) where.status = status;
     if (category) where.category = category;
-    if (q) {
-      where.$or = [
-        { "profile.fullName": new RegExp(q, "i") },
-        { "profile.socials.linkedin": new RegExp(q, "i") },
-        { "profile.socials.twitter": new RegExp(q, "i") },
-      ];
+    if (qText) {
+      where.$text = { $search: qText };
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const pageNum = Math.max(1, Number.parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
     const [items, total] = await Promise.all([
       IntellectualApplication.find(where)
-        .sort({ createdAt: -1 })
+        .sort(qText ? { score: { $meta: "textScore" }, createdAt: -1 } : { createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(limitNum),
       IntellectualApplication.countDocuments(where),
     ]);
 
     res.json({
       items,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
     });
   } catch (err) {
     req.log.error("adminListApplications error:", err.message);

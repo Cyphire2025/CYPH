@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, BadgeCheck, User, X, Send } from "lucide-react";
 import { apiFetch } from "../lib/fetch";
+import { safeMediaUrl } from "../utils/safeUrl";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -57,7 +58,7 @@ export default function TicketsView() {
           <div className="max-h-72 overflow-y-auto flex flex-col gap-3 mb-4">
             {activeTicket.comments.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.author.role === "admin" ? "flex-row-reverse text-right" : ""} gap-4`}>
-                <img src={msg.author.avatar || "/admin-avatar.png"} alt="avatar" className="h-9 w-9 rounded-full border border-white/10" />
+                <img src={safeMediaUrl(msg.author.avatar || "", "/admin-avatar.png")} alt="avatar" className="h-9 w-9 rounded-full border border-white/10" />
                 <div className="bg-white/10 rounded-lg px-4 py-2 text-white flex-1">
                   <div className="font-semibold flex items-center gap-1 mb-1">
                     {msg.author.name}
@@ -66,11 +67,15 @@ export default function TicketsView() {
                   <div>{msg.text}</div>
                   {msg.files && msg.files.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {msg.files.map((f, fi) => (
-                        <a key={fi} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/20 bg-black/20 text-xs text-fuchsia-200 hover:bg-fuchsia-900/20">
-                          {f.original_name}
-                        </a>
-                      ))}
+                      {msg.files.map((f, fi) => {
+                        const safeUrl = safeMediaUrl(f.url || "", "");
+                        if (!safeUrl) return null;
+                        return (
+                          <a key={fi} href={safeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/20 bg-black/20 text-xs text-fuchsia-200 hover:bg-fuchsia-900/20">
+                            {f.original_name}
+                          </a>
+                        );
+                      })}
                     </div>
                   )}
                   <div className="mt-1 text-xs text-white/40">{new Date(msg.createdAt).toLocaleString()}</div>

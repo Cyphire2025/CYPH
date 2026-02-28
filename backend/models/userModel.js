@@ -122,6 +122,7 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       lowercase: true,
       trim: true,
+      match: [/^[a-z0-9-]+$/, "Invalid slug format"],
     },
 
     bio: { type: String, maxlength: 300 },
