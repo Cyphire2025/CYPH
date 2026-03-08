@@ -172,7 +172,7 @@ const DEV_ORIGINS = [
   "http://127.0.0.1:5175",
 ];
 
-const ALLOWED_ORIGINS = new Set(IS_PROD ? PROD_ORIGINS : [...PROD_ORIGINS, ...DEV_ORIGINS]);
+const ALLOWED_ORIGINS = new Set([...PROD_ORIGINS, ...DEV_ORIGINS]);
 
 const isAllowedCorsOrigin = (origin) => {
   if (!origin) return true;
