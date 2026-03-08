@@ -28,6 +28,22 @@ export const createPaymentLog = async (req, res) => {
     const task = await Task.findOne({ workroomId }).populate("selectedApplicant");
     if (!task) return res.status(404).json({ error: "Task not found" });
 
+    const requesterId = String(req.user?._id || "");
+    const selectedApplicantId = String(task.selectedApplicant?._id || task.selectedApplicant || "");
+    const isSelectedApplicant = requesterId && selectedApplicantId && requesterId === selectedApplicantId;
+    if (!isSelectedApplicant && !req.user?.isAdmin) {
+      return res.status(403).json({ error: "Only the selected applicant can request payout" });
+    }
+
+    if (!task.finalisedAt || !task.clientFinalised || !task.workerFinalised) {
+      return res.status(400).json({ error: "Workroom must be finalized before payout request" });
+    }
+
+    const existingLog = await PaymentLog.findOne({ workroomId }).sort({ createdAt: -1 });
+    if (existingLog) {
+      return res.json({ success: true, log: existingLog, paymentRequested: true, idempotent: true });
+    }
+
     const freelancer = await User.findById(task.selectedApplicant);
     if (!freelancer) return res.status(404).json({ error: "Freelancer not found" });
 

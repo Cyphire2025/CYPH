@@ -91,7 +91,7 @@ export default function ActionTile({
           <div className="grid h-12 w-12 place-items-center rounded-2xl border border-blue-100 bg-blue-50">
             <Icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+          <h3 className="text-xl font-sans font-bold text-slate-900">{title}</h3>
         </div>
         <p id={describedById} className="max-w-[48ch] text-slate-600">{desc}</p>
         {Array.isArray(bullets) && bullets.length > 0 && (

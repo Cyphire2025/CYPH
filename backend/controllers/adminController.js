@@ -18,12 +18,18 @@ const signAdminJwt = (payload = {}) =>
 
 const getLogger = (req) => req?.log || console;
 const isProd = process.env.NODE_ENV === "production";
-const adminCookieSameSite = process.env.COOKIE_SAMESITE || (isProd ? "none" : "lax");
+const normalizeSameSite = (value) => {
+  const candidate = String(value || "").trim().toLowerCase();
+  if (candidate === "strict" || candidate === "lax" || candidate === "none") return candidate;
+  return isProd ? "strict" : "lax";
+};
+const adminCookieSameSite = normalizeSameSite(process.env.COOKIE_SAMESITE);
+const adminCookieSecure = adminCookieSameSite === "none" ? true : isProd;
 
 const setAdminAuthCookie = (res, token) => {
   res.cookie("admin_token", token, {
     httpOnly: true,
-    secure: isProd,
+    secure: adminCookieSecure,
     sameSite: adminCookieSameSite,
     path: "/",
     maxAge: 60 * 60 * 1000, // 1 hour
@@ -33,7 +39,7 @@ const setAdminAuthCookie = (res, token) => {
 const clearAdminAuthCookie = (res) => {
   res.clearCookie("admin_token", {
     httpOnly: true,
-    secure: isProd,
+    secure: adminCookieSecure,
     sameSite: adminCookieSameSite,
     path: "/",
   });

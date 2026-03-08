@@ -3,6 +3,21 @@
 import WorkroomMessages from "../models/workroomMessageModel.js";
 import Task from "../models/taskModel.js";
 
+const canAccessWorkroom = async ({ workroomId, user }) => {
+  const task = await Task.findOne({ workroomId }).select("createdBy selectedApplicant finalisedAt");
+  if (!task) return { ok: false, code: 404, error: "Workroom not found" };
+
+  const userId = String(user?._id || "");
+  const isOwner = String(task.createdBy) === userId;
+  const isSelected = String(task.selectedApplicant || "") === userId;
+  const isAdmin = Boolean(user?.isAdmin);
+
+  if (!isOwner && !isSelected && !isAdmin) {
+    return { ok: false, code: 403, error: "Forbidden" };
+  }
+  return { ok: true, task };
+};
+
 /**
  * POST /api/workrooms/:workroomId/messages
  * Post a message (text + attachments) in a workroom.
@@ -13,9 +28,10 @@ export const postMessage = async (req, res) => {
     const { workroomId } = req.params;
     const { text } = req.body;
     const userId = req.user._id;
-    const task = await Task.findOne({ workroomId });
+    const access = await canAccessWorkroom({ workroomId, user: req.user });
+    if (!access.ok) return res.status(access.code).json({ error: access.error });
+    const task = access.task;
 
-    if (!task) return res.status(404).json({ error: "Workroom not found" });
     if (task.finalisedAt) return res.status(400).json({ error: "Chat is finalized" });
 
     const files = Array.isArray(req.files) ? req.files : [];
@@ -73,6 +89,9 @@ export const postMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   try {
     const { workroomId } = req.params;
+    const access = await canAccessWorkroom({ workroomId, user: req.user });
+    if (!access.ok) return res.status(access.code).json({ error: access.error });
+
     const doc = await WorkroomMessages.findOne({ workroomId }).populate("messages.sender", "name avatar");
     if (!doc) return res.json({ items: [] });
     // Filter out deleted messages just in case
@@ -91,6 +110,9 @@ export const getMessages = async (req, res) => {
 export const deleteMessage = async (req, res) => {
   try {
     const { workroomId, messageId } = req.params;
+    const access = await canAccessWorkroom({ workroomId, user: req.user });
+    if (!access.ok) return res.status(access.code).json({ success: false, error: access.error });
+
     const doc = await WorkroomMessages.findOne({ workroomId });
     if (!doc) return res.status(404).json({ success: false, error: "Workroom not found" });
 

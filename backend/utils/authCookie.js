@@ -1,6 +1,20 @@
 // utils/authCookie.js
 import crypto from "crypto";
 
+function normalizeSameSite(value, isProd) {
+  const candidate = String(value || "").trim().toLowerCase();
+  if (candidate === "strict" || candidate === "lax" || candidate === "none") return candidate;
+  return isProd ? "strict" : "lax";
+}
+
+function resolveCookieOptions(isProd) {
+  const sameSite = normalizeSameSite(process.env.COOKIE_SAMESITE, isProd);
+  return {
+    sameSite,
+    secure: sameSite === "none" ? true : isProd,
+  };
+}
+
 /**
  * setAuthCookie(res, token, { remember = false })
  * - Sets httpOnly 'token' + JS-readable 'csrfToken' (double-submit).
@@ -8,8 +22,7 @@ import crypto from "crypto";
  */
 export function setAuthCookie(res, token, { remember = false } = {}) {
   const isProd = process.env.NODE_ENV === "production";
-  // If FE and BE are on different domains, you MUST use 'none' (secure: true).
-  const sameSite = process.env.COOKIE_SAMESITE || (isProd ? "none" : "lax");
+  const { sameSite, secure } = resolveCookieOptions(isProd);
 
   const maxAge = remember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // ms
   if (typeof token !== "string") throw new Error("setAuthCookie: token must be a string");
@@ -17,7 +30,7 @@ export function setAuthCookie(res, token, { remember = false } = {}) {
   // Auth cookie (httpOnly)
   res.cookie("token", token, {
     httpOnly: true,
-    secure: !!isProd,      // required when SameSite=None
+    secure,
     sameSite,
     path: "/",
     maxAge,
@@ -29,7 +42,7 @@ export function setAuthCookie(res, token, { remember = false } = {}) {
 
   res.cookie("csrfToken", csrfToken, {
     httpOnly: false,
-    secure: !!isProd,
+    secure,
     sameSite,
     path: "/",
     maxAge: csrfMaxAge,
@@ -41,10 +54,10 @@ export function setAuthCookie(res, token, { remember = false } = {}) {
 /** Clears both cookies */
 export function clearAuthCookie(res) {
   const isProd = process.env.NODE_ENV === "production";
-  const sameSite = process.env.COOKIE_SAMESITE || (isProd ? "none" : "lax");
+  const { sameSite, secure } = resolveCookieOptions(isProd);
 
-  res.clearCookie("token", { httpOnly: true, secure: !!isProd, sameSite, path: "/" });
-  res.clearCookie("csrfToken", { httpOnly: false, secure: !!isProd, sameSite, path: "/" });
+  res.clearCookie("token", { httpOnly: true, secure, sameSite, path: "/" });
+  res.clearCookie("csrfToken", { httpOnly: false, secure, sameSite, path: "/" });
 }
 
 /** Prefer Authorization Bearer; fallback to cookie */

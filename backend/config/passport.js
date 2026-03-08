@@ -20,8 +20,10 @@ const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   console.warn("Google OAuth DISABLED: missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET");
 } else {
-  console.log("Google OAuth enabled");
-  console.log("Google callback URL:", callbackUrl);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Google OAuth enabled");
+    console.log("Google callback URL:", callbackUrl);
+  }
 
   passport.use(
     new GoogleStrategy(

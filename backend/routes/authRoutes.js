@@ -14,13 +14,20 @@ const signinLimiter = buildLimiter({
   message: { error: "Too many sign-in attempts. Please try again later." },
 });
 
+const signupLimiter = buildLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 6,
+  prefix: "rl:auth:signup:",
+  message: { error: "Too many sign-up attempts. Please try again later." },
+});
+
 /*
  * OTP routes are intentionally disabled for now.
  * Keep controller/schema implementations in place until OTP rollout resumes.
  */
 
 // Simple email/password signup
-router.post("/signup", validateBody(signupSchema), authController.emailSignup);
+router.post("/signup", signupLimiter, validateBody(signupSchema), authController.emailSignup);
 
 // Simple email/password signin
 router.post(

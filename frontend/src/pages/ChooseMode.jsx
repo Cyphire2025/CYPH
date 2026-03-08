@@ -243,7 +243,7 @@ export default function ChooseMode() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-[clamp(2.5rem,5vw,3.5rem)] font-extrabold tracking-tight text-slate-900"
+              className="text-[clamp(2.5rem,5vw,3.5rem)] font-sans font-extrabold tracking-tight text-slate-900"
             >
               Choose your{" "}
               <span className="text-blue-600">

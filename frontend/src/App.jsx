@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 // pages
-import LandingPage from "./pages/landing";
+import LandingPage from "./pages/landingnew";
 import Signup from "./pages/signup";
 // import Signup from "./pages/home/signup(phone)";
 import Signin from "./pages/signin";
