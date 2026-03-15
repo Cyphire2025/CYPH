@@ -7,6 +7,7 @@ import {
 } from "../components/workroom/messageUtils";
 
 const TYPING_IDLE_MS = 900;
+const TYPING_THROTTLE_MS = 2000;
 const REMOTE_TYPING_VISIBLE_MS = 1400;
 
 const uuid = () =>
@@ -101,6 +102,8 @@ export function useWorkroom(workroomId) {
   const atBottomRef = useRef(true);
   const typingHideTimerRef = useRef(null);
   const localStopTypingTimerRef = useRef(null);
+  const isTypingRef = useRef(false);
+  const lastTypingEmitRef = useRef(0);
 
   useEffect(() => {
     meIdRef.current = me?._id || null;
@@ -302,6 +305,8 @@ export function useWorkroom(workroomId) {
     return () => {
       window.clearTimeout(typingHideTimerRef.current);
       window.clearTimeout(localStopTypingTimerRef.current);
+      isTypingRef.current = false;
+      lastTypingEmitRef.current = 0;
       socket.off("connect", onConnect);
       socket.off("joined", onJoined);
       socket.off("message:new", onMessage);
@@ -316,12 +321,22 @@ export function useWorkroom(workroomId) {
 
   const stopTyping = useCallback(() => {
     if (!socketRef.current || !workroomId) return;
+    if (!isTypingRef.current) return;
+    isTypingRef.current = false;
     socketRef.current.emit("typing:stop", { workroomId, userId: meIdRef.current });
   }, [workroomId]);
 
   const emitTyping = useCallback(() => {
     if (!socketRef.current || !workroomId || !meIdRef.current) return;
-    socketRef.current.emit("typing", { workroomId, userId: meIdRef.current });
+    const now = Date.now();
+    const shouldEmit =
+      !isTypingRef.current || now - lastTypingEmitRef.current >= TYPING_THROTTLE_MS;
+
+    if (shouldEmit) {
+      socketRef.current.emit("typing", { workroomId, userId: meIdRef.current });
+      isTypingRef.current = true;
+      lastTypingEmitRef.current = now;
+    }
     window.clearTimeout(localStopTypingTimerRef.current);
     localStopTypingTimerRef.current = window.setTimeout(() => {
       stopTyping();
