@@ -14,7 +14,7 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "geolocation=(), camera=(), microphone=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' https://cyphire.onrender.com wss://cyphire.onrender.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com https://ui-avatars.com; connect-src 'self' https://cyphire.onrender.com wss://cyphire.onrender.com https://backend.cyphire.in wss://backend.cyphire.in; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
       ]
     }
   ],

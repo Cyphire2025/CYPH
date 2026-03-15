@@ -2,10 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const PROD_CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000 ws://127.0.0.1:5000 ws://localhost:5173 ws://localhost:5174 ws://localhost:5175; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com https://ui-avatars.com; font-src 'self' data:; connect-src 'self' https://backend.cyphire.in wss://backend.cyphire.in https://cyphire.onrender.com wss://cyphire.onrender.com http://localhost:5000 ws://localhost:5000 ws://127.0.0.1:5000 ws://localhost:5173 ws://localhost:5174 ws://localhost:5175; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
 const DEV_CSP =
-  "default-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' blob: http://localhost:5000 http://127.0.0.1:5000 ws://localhost:5000 ws://127.0.0.1:5000 ws://localhost:5173 ws://localhost:5174 ws://localhost:5175 ws://127.0.0.1:5173 ws://127.0.0.1:5174 ws://127.0.0.1:5175; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
+  "default-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://ui-avatars.com; font-src 'self' data:; connect-src 'self' blob: http://localhost:5000 http://127.0.0.1:5000 ws://localhost:5000 ws://127.0.0.1:5000 ws://localhost:5173 ws://localhost:5174 ws://localhost:5175 ws://127.0.0.1:5173 ws://127.0.0.1:5174 ws://127.0.0.1:5175 https://backend.cyphire.in wss://backend.cyphire.in; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';";
 
 const SECURITY_HEADERS = (command) => ({
   "X-Frame-Options": "DENY",
