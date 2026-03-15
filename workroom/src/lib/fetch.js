@@ -3,7 +3,7 @@ const API_BASE =
   import.meta?.env?.VITE_API_BASE ||
   (location.hostname.includes("localhost")
     ? "http://localhost:5000"
-    : "https://cyphire.onrender.com");
+    : "https://backend.cyphire.in");
 
 let cachedCsrf = null;
 const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);

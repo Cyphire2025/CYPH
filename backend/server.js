@@ -156,11 +156,21 @@ const parseOriginList = (value = "") =>
     .filter(Boolean)
     .map((origin) => origin.replace(/\/+$/, ""));
 
+const DEFAULT_PROD_ORIGINS = [
+  "https://cyphire.in",
+  "https://www.cyphire.in",
+  "https://workroom.cyphire.in",
+  "https://admin.cyphire.in",
+  "https://cyphire.vercel.app",
+  "https://cyphirechat.vercel.app",
+];
+
 const PROD_ORIGINS = [
   ...parseOriginList(process.env.CORS_ALLOWED_ORIGINS),
   ...parseOriginList(process.env.FRONTEND_URL),
   ...parseOriginList(process.env.ADMIN_FRONTEND_URL),
   ...parseOriginList(process.env.WORKROOM_FRONTEND_URL),
+  ...DEFAULT_PROD_ORIGINS,
 ];
 
 const DEV_ORIGINS = [
